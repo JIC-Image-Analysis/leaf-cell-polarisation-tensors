@@ -19,6 +19,7 @@ from jicbioimage.transform import (
     max_intensity_projection,
     remove_small_objects,
     invert,
+    dilate_binary,
 )
 from jicbioimage.segment import connected_components, watershed_with_seeds
 from jicbioimage.illustrate import AnnotatedImage
@@ -102,7 +103,8 @@ def segment(zstack_proxy_iterator):
     """Return a segmented image."""
     raw, processed = preprocess_zstack(zstack_proxy_iterator, 90)
     projection = max_intensity_projection(raw)
-    image = max_intensity_projection(processed)
+    binary_wall = max_intensity_projection(processed)
+    image = dilate_binary(binary_wall)
     image = invert(image)
     image = remove_small_objects(image, min_size=10)
     seeds = connected_components(image, background=0)
