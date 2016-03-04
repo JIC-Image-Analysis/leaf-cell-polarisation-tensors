@@ -8,17 +8,21 @@ import numpy as np
 
 from jicbioimage.core.image import MicroscopyCollection
 from jicbioimage.core.transform import transformation
+from jicbioimage.core.util.color import pretty_color
 from jicbioimage.core.io import (
     FileBackend,
     DataManager,
     _md5_hexdigest_from_file,
     AutoWrite,
 )
-
 from jicbioimage.transform import (
     max_intensity_projection,
     remove_small_objects,
+    invert,
 )
+from jicbioimage.segment import connected_components, watershed_with_seeds
+from jicbioimage.illustrate import AnnotatedImage
+
 
 HERE = os.path.dirname(os.path.realpath(__file__))
 
@@ -97,10 +101,24 @@ def preprocess_zstack(zstack_proxy_iterator, cutoff):
 def segment(zstack_proxy_iterator):
     """Return a segmented image."""
     raw, processed = preprocess_zstack(zstack_proxy_iterator, 90)
-    image = max_intensity_projection(raw)
+    projection = max_intensity_projection(raw)
     image = max_intensity_projection(processed)
+    image = invert(image)
+    image = remove_small_objects(image, min_size=10)
+    seeds = connected_components(image, background=0)
+    segmentation = watershed_with_seeds(-projection, seeds=seeds)
 
-    return image
+    return segmentation, projection
+
+
+def annotate(segmentation, projection):
+    """Write out an annotated image."""
+    ann = AnnotatedImage.from_grayscale(projection)
+    for i in segmentation.identifiers:
+        region = segmentation.region_by_identifier(i)
+        ann.mask_region(region.inner.border.dilate(), color=pretty_color(i))
+    with open("annotation.png", "wb") as fh:
+        fh.write(ann.png())
 
 
 def main():
@@ -112,9 +130,10 @@ def main():
         parser.error("No such file: {}".format(args.input_file))
 
     microscopy_collection = get_microscopy_collection(args.input_file)
-
     zstack_proxy_iterator = microscopy_collection.zstack_proxy_iterator(c=1)
-    segment(zstack_proxy_iterator)
+
+    segmentation, projection = segment(zstack_proxy_iterator)
+    annotate(segmentation, projection)
 
 if __name__ == "__main__":
     main()
