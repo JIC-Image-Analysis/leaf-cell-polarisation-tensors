@@ -4,11 +4,7 @@ import os.path
 import argparse
 import warnings
 
-import numpy as np
-
-from jicbioimage.core.transform import transformation
 from jicbioimage.core.util.color import pretty_color
-from jicbioimage.core.io import AutoWrite
 from jicbioimage.transform import (
     max_intensity_projection,
     remove_small_objects,
@@ -18,62 +14,10 @@ from jicbioimage.transform import (
 from jicbioimage.segment import connected_components, watershed_with_seeds
 from jicbioimage.illustrate import AnnotatedImage
 
-from utils import get_microscopy_collection
+from utils import get_microscopy_collection, preprocess_zstack
 
 # Suppress spurious scikit-image warnings.
 warnings.filterwarnings("ignore", module="skimage.io._io")
-
-
-
-
-@transformation
-def threshold_mean(image):
-    """Return image thresholded using the mean."""
-    return image > np.mean(image)
-
-
-@transformation
-def threshold_percentile(image, percentile):
-    """Return image thresholded using the mean."""
-    return image > np.percentile(image, percentile)
-
-
-@transformation
-def threshold_abs(image, threshold):
-    """Return image thresholded using the mean."""
-    return image > threshold
-
-
-@transformation
-def identity(image):
-    return image
-
-
-def segment_zslice(image):
-    """Segment a zslice."""
-    tmp_autowrite = AutoWrite.on
-    AutoWrite.on = False
-    image = identity(image)
-    image = threshold_abs(image, 100)
-    image = remove_small_objects(image, min_size=500)
-    AutoWrite.on = tmp_autowrite
-    return image
-
-
-def preprocess_zstack(zstack_proxy_iterator, cutoff):
-    """Select the pixels where the signal is."""
-    raw = []
-    zstack = []
-    for i, proxy_image in enumerate(zstack_proxy_iterator):
-        image = proxy_image.image
-        segmented = segment_zslice(image)
-        with open("z{:03d}.png".format(i), "wb") as fh:
-            fh.write(segmented.png())
-        with open("raw_z{:03d}.png".format(i), "wb") as fh:
-            fh.write(image.png())
-        raw.append(image)
-        zstack.append(segmented)
-    return np.dstack(raw), np.dstack(zstack)
 
 
 def segment(zstack_proxy_iterator):
