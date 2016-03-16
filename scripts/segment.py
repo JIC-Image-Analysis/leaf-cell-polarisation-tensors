@@ -6,15 +6,9 @@ import warnings
 
 import numpy as np
 
-from jicbioimage.core.image import MicroscopyCollection
 from jicbioimage.core.transform import transformation
 from jicbioimage.core.util.color import pretty_color
-from jicbioimage.core.io import (
-    FileBackend,
-    DataManager,
-    _md5_hexdigest_from_file,
-    AutoWrite,
-)
+from jicbioimage.core.io import AutoWrite
 from jicbioimage.transform import (
     max_intensity_projection,
     remove_small_objects,
@@ -24,29 +18,12 @@ from jicbioimage.transform import (
 from jicbioimage.segment import connected_components, watershed_with_seeds
 from jicbioimage.illustrate import AnnotatedImage
 
-
-HERE = os.path.dirname(os.path.realpath(__file__))
+from utils import get_microscopy_collection
 
 # Suppress spurious scikit-image warnings.
 warnings.filterwarnings("ignore", module="skimage.io._io")
 
 
-def get_microscopy_collection(input_file):
-    """Return microscopy collection from input file."""
-    data_dir = os.path.abspath(os.path.join(HERE, "..", "data"))
-    if not os.path.isdir(data_dir):
-        raise(OSError("Data directory does not exist: {}".format(data_dir)))
-    backend_dir = os.path.join(data_dir, 'unpacked')
-    file_backend = FileBackend(backend_dir)
-    data_manager = DataManager(file_backend)
-    data_manager.load(input_file)
-
-    md5_hex = _md5_hexdigest_from_file(input_file)
-    manifest_path = os.path.join(backend_dir, md5_hex, "manifest.json")
-
-    microscopy_collection = MicroscopyCollection()
-    microscopy_collection.parse_manifest(manifest_path)
-    return microscopy_collection
 
 
 @transformation
