@@ -108,9 +108,10 @@ def marker_cell_identifier(marker_region, cells):
     pos = marker_region.convex_hull.centroid
     return cells[pos]
 
-def annotate(cells, markers, intensity):
+def annotate(cells, markers, wall_intensity2D, marker_intensity2D):
     """Write an annotated image to disk."""
-    ann = AnnotatedImage.from_grayscale(intensity)
+    ann = AnnotatedImage.from_grayscale(wall_intensity2D/5, (True, False, True) )
+    ann = ann + AnnotatedImage.from_grayscale(marker_intensity2D, (False, True, False) )
 
     for i in cells.identifiers:
         region = cells.region_by_identifier(i)
@@ -164,7 +165,7 @@ def analyse(microscopy_collection):
     markers = marker_segmentation(marker_intensity3D, wall_mask3D)
 
     # Create annotated images.
-    annotate(cells, markers, marker_intensity2D)
+    annotate(cells, markers, wall_intensity2D, marker_intensity2D*wall_mask2D)
 
 
 def main():
