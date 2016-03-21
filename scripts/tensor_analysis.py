@@ -149,6 +149,43 @@ def annotate(cells, markers, wall_intensity2D, marker_intensity2D):
     with open("annotation.png", "wb") as fh:
         fh.write(ann.png())
 
+def annotate_simple(wall_mask2D, cells, markers):
+    """Write an annotated image to disk."""
+    y, x = wall_mask2D.shape
+    ann1 = AnnotatedImage.blank_canvas(width=x, height=y)
+    ann1.mask_region(wall_mask2D, (55, 55, 55))
+
+    ann2 = AnnotatedImage.blank_canvas(width=x, height=y)
+    ann2.mask_region(wall_mask2D, (0, 0, 0))
+
+    for i in markers.identifiers:
+        m_region = markers.region_by_identifier(i)
+        m_centroid = m_region.convex_hull.centroid
+
+        cell_id = marker_cell_identifier(m_region, cells)
+        c_region = cells.region_by_identifier(cell_id)
+        c_centroid = c_region.centroid
+
+        color = pretty_color(cell_id)
+
+        ann1.mask_region(m_region, color=color)
+
+        line = np.zeros((y, x), dtype=bool)
+        y0, x0 = tuple([int(round(i)) for i in m_centroid])
+        y1, x1 = tuple([int(round(i)) for i in c_centroid])
+        rows, cols = skimage.draw.line(y0, x0, y1, x1)
+        line[rows, cols] = True
+        ann1.mask_region(line, color=color)
+        ann2.mask_region(line, color=color)
+
+        ann1.draw_cross(c_region.centroid, color=color)
+        ann2.draw_cross(c_region.centroid, color=color)
+
+    with open("simple_ann1.png", "wb") as fh:
+        fh.write(ann1.png())
+
+    with open("simple_ann2.png", "wb") as fh:
+        fh.write(ann2.png())
 
 def analyse(microscopy_collection):
     """Do the analysis."""
@@ -166,6 +203,7 @@ def analyse(microscopy_collection):
 
     # Create annotated images.
     annotate(cells, markers, wall_intensity2D, marker_intensity2D*wall_mask2D)
+    annotate_simple(wall_mask2D, cells, markers)
 
 
 def main():
