@@ -23,7 +23,6 @@ from jicbioimage.transform import (
     invert,
 )
 from jicbioimage.segment import (
-    Region,
     connected_components,
     watershed_with_seeds,
 )
@@ -108,10 +107,13 @@ def marker_cell_identifier(marker_region, cells):
     pos = marker_region.convex_hull.centroid
     return cells[pos]
 
+
 def annotate(cells, markers, wall_intensity2D, marker_intensity2D):
     """Write an annotated image to disk."""
-    ann = AnnotatedImage.from_grayscale(wall_intensity2D/5, (True, False, True) )
-    ann = ann + AnnotatedImage.from_grayscale(marker_intensity2D, (False, True, False) )
+    ann = AnnotatedImage.from_grayscale(wall_intensity2D/5,
+                                        (True, False, True))
+    ann = ann + AnnotatedImage.from_grayscale(marker_intensity2D,
+                                              (False, True, False))
 
     for i in cells.identifiers:
         region = cells.region_by_identifier(i)
@@ -128,16 +130,6 @@ def annotate(cells, markers, wall_intensity2D, marker_intensity2D):
         color = pretty_color(cell_id)
         ann.mask_region(m_region.border, color=color)
 
-#       try:
-#           ann.draw_cross(m_region.convex_hull.centroid, color=color)
-#       except IndexError:
-#           print "Issue with marker region {} centroid {}".format(i, m_region.convex_hull.centroid)
-
-#       try:
-#           ann.draw_cross(c_region.centroid, color=color)
-#       except IndexError:
-#           print "Issue with cell region {} centroid {}".format(cell_id, m_region.centroid)
-
         ydim, xdim, zdim = ann.shape
         line = np.zeros((ydim, xdim), dtype=bool)
         y0, x0 = tuple([int(round(i)) for i in m_centroid])
@@ -148,6 +140,7 @@ def annotate(cells, markers, wall_intensity2D, marker_intensity2D):
 
     with open("annotation.png", "wb") as fh:
         fh.write(ann.png())
+
 
 def annotate_simple(wall_mask2D, cells, markers):
     """Write an annotated image to disk."""
@@ -186,6 +179,7 @@ def annotate_simple(wall_mask2D, cells, markers):
 
     with open("simple_ann2.png", "wb") as fh:
         fh.write(ann2.png())
+
 
 def analyse(microscopy_collection):
     """Do the analysis."""
