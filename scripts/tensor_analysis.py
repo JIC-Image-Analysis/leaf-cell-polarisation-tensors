@@ -32,6 +32,14 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 AutoName.prefix_format = "{:03d}_"
 
 
+class CellTensor(object):
+    """Class for storing cell identifier, centroid and marker position."""
+    def __init__(self, identifier, centroid, marker_position):
+        self.identifier = identifier
+        self.centroid = centroid
+        self.marker_position = marker_position
+
+
 def get_microscopy_collection(input_file):
     """Return microscopy collection from input file."""
     data_dir = os.path.abspath(os.path.join(HERE, "..", "data"))
@@ -108,6 +116,26 @@ def marker_cell_identifier(marker_region, cells):
     return cells[pos]
 
 
+def yield_cell_tensors(cells, markers):
+    """Return cell tensor iterator."""
+    for i in markers.identifiers:
+        m_region = markers.region_by_identifier(i)
+        marker_position = m_region.convex_hull.centroid
+        cell_id = marker_cell_identifier(m_region, cells)
+        c_region = cells.region_by_identifier(cell_id)
+        centroid = c_region.centroid
+        yield CellTensor(cell_id, centroid, marker_position)
+
+
+def line_mask(shape, pos1, pos2):
+    """Return line mask for annotating images."""
+    line = np.zeros(shape, dtype=bool)
+    y0, x0 = tuple([int(round(i)) for i in pos1])
+    y1, x1 = tuple([int(round(i)) for i in pos2])
+    rows, cols = skimage.draw.line(y0, x0, y1, x1)
+    line[rows, cols] = True
+    return line
+
 def annotate(cells, markers, wall_intensity2D, marker_intensity2D):
     """Write an annotated image to disk."""
     ann = AnnotatedImage.from_grayscale(wall_intensity2D/5,
@@ -121,21 +149,15 @@ def annotate(cells, markers, wall_intensity2D, marker_intensity2D):
 
     for i in markers.identifiers:
         m_region = markers.region_by_identifier(i)
-        m_centroid = m_region.convex_hull.centroid
-
         cell_id = marker_cell_identifier(m_region, cells)
-        c_region = cells.region_by_identifier(cell_id)
-        c_centroid = c_region.centroid
-
         color = pretty_color(cell_id)
         ann.mask_region(m_region.border, color=color)
 
+    for cell_tensor in yield_cell_tensors(cells, markers):
+        color = pretty_color(cell_tensor.identifier)
         ydim, xdim, zdim = ann.shape
-        line = np.zeros((ydim, xdim), dtype=bool)
-        y0, x0 = tuple([int(round(i)) for i in m_centroid])
-        y1, x1 = tuple([int(round(i)) for i in c_centroid])
-        rows, cols = skimage.draw.line(y0, x0, y1, x1)
-        line[rows, cols] = True
+        line = line_mask((ydim, xdim), cell_tensor.marker_position,
+                         cell_tensor.centroid)
         ann.mask_region(line, color=color)
 
     with open("annotation.png", "wb") as fh:
@@ -153,26 +175,19 @@ def annotate_simple(wall_mask2D, cells, markers):
 
     for i in markers.identifiers:
         m_region = markers.region_by_identifier(i)
-        m_centroid = m_region.convex_hull.centroid
-
         cell_id = marker_cell_identifier(m_region, cells)
-        c_region = cells.region_by_identifier(cell_id)
-        c_centroid = c_region.centroid
-
         color = pretty_color(cell_id)
-
         ann1.mask_region(m_region, color=color)
 
-        line = np.zeros((y, x), dtype=bool)
-        y0, x0 = tuple([int(round(i)) for i in m_centroid])
-        y1, x1 = tuple([int(round(i)) for i in c_centroid])
-        rows, cols = skimage.draw.line(y0, x0, y1, x1)
-        line[rows, cols] = True
+    for cell_tensor in yield_cell_tensors(cells, markers):
+        color = pretty_color(cell_tensor.identifier)
+        ydim, xdim, zdim = ann1.shape
+        line = line_mask((ydim, xdim), cell_tensor.marker_position,
+                         cell_tensor.centroid)
         ann1.mask_region(line, color=color)
         ann2.mask_region(line, color=color)
-
-        ann1.draw_cross(c_region.centroid, color=color)
-        ann2.draw_cross(c_region.centroid, color=color)
+        ann1.draw_cross(cell_tensor.centroid, color=color)
+        ann2.draw_cross(cell_tensor.centroid, color=color)
 
     with open("simple_ann1.png", "wb") as fh:
         fh.write(ann1.png())
