@@ -39,6 +39,32 @@ class CellTensor(object):
         self.centroid = centroid
         self.marker_position = marker_position
 
+    @staticmethod
+    def csv_header():
+        """Return CSV header line."""
+        return "cell_id,mx,my,cx,cy\n"
+
+    @classmethod
+    def from_csv_line(cls, line):
+        """Return CellTensor instance from a CSV line."""
+        line = line.strip()
+        words = line.split(",")
+        identifier = int(words[0])
+        marker_position = (float(words[2]), float(words[1]))
+        centroid = (float(words[4]), float(words[3]))
+        return cls(identifier, centroid, marker_position)
+
+    @property
+    def csv_line(self):
+        """Return CellTensor as a CSV line."""
+        line = "{:d},{:f},{:f},{:f},{:f}\n"
+        return line.format(self.identifier,
+                           self.marker_position[1],  # x
+                           self.marker_position[0],  # y
+                           self.centroid[1],  # x
+                           self.centroid[0],  # y
+                           )
+
 
 def get_microscopy_collection(input_file):
     """Return microscopy collection from input file."""
@@ -136,6 +162,7 @@ def line_mask(shape, pos1, pos2):
     line[rows, cols] = True
     return line
 
+
 def annotate(cells, markers, wall_intensity2D, marker_intensity2D):
     """Write an annotated image to disk."""
     ann = AnnotatedImage.from_grayscale(wall_intensity2D/5,
@@ -196,6 +223,14 @@ def annotate_simple(wall_mask2D, cells, markers):
         fh.write(ann2.png())
 
 
+def write_tensor_csv(cells, markers):
+    """Write out a tensors.csv file."""
+    with open("tensors.csv", "w") as fh:
+        fh.write(CellTensor.csv_header())
+        for cell_tensor in yield_cell_tensors(cells, markers):
+            fh.write(cell_tensor.csv_line)
+
+
 def analyse(microscopy_collection):
     """Do the analysis."""
     # Prepare the input data for the segmentations.
@@ -214,9 +249,12 @@ def analyse(microscopy_collection):
     annotate(cells, markers, wall_intensity2D, marker_intensity2D*wall_mask2D)
     annotate_simple(wall_mask2D, cells, markers)
 
+    # Write out csv file.
+    write_tensor_csv(cells, markers)
+
 
 def main():
-    """Run the analysis on an indivudual image."""
+    """Run the analysis on an individual image."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input_file", help="Path to input tiff file")
     args = parser.parse_args()
