@@ -216,3 +216,18 @@ def test_overall_api():
     assert tensor_manager.has_key(6) is True
     assert tensor_manager.identifiers == [1, 2, 5, 6]
 
+
+    # Test undo followed by new action.
+    print len(tensor_manager.commands)
+    assert len(tensor_manager.commands) == 4
+    tensor_manager.undo()
+    assert tensor_manager.has_key(6) is False
+    tensor_manager.undo()
+    assert len(tensor_manager.commands) == 4
+    assert tensor_manager.command_offset == -2
+    assert tensor1.marker == (3, 5)
+    assert tensor_manager[2].centroid == (2, 8)
+    tensor_manager.update_centroid(2, (1, 1))
+    assert tensor_manager[2].centroid == (1, 1)
+    assert len(tensor_manager.commands) == 3
+    assert tensor_manager.command_offset == 0
