@@ -37,12 +37,6 @@ class Command(object):
         self.undo_method = undo_method
         self.undo_args = undo_args
 
-    def __str__(self):
-        return "<Command({}({}))>".format(self.do_method.__name__,
-                                          self.do_args)
-    def __repr__(self):
-        return self.__str__()
-
     def do(self):
         """Execute a command."""
         if self.do_args is None:
@@ -64,9 +58,6 @@ class TensorManager(dict):
     def __init__(self):
         self.commands = []
         self.command_offset = 0
-
-    def __str__(self):
-        return "<TensorManager(ntensors={}, ncommands={}, cmd_offset={})>".format(len(self), len(self.commands), self.command_offset)
 
     @property
     def identifiers(self):
