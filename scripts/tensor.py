@@ -16,7 +16,9 @@ class Tensor(object):
         self.active = True
 
     def update_attribute(self, name, value):
-        logging.info("tensor={}, {}={}".format(self.identifier, name, value))
+        d = dict(tensor=self.identifier)
+        d[name] = value
+        logging.info(json.dumps(d))
         object.__setattr__(self, name, value)
 
     def activate(self):
