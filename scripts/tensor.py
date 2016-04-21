@@ -217,7 +217,6 @@ def test_overall_api():
     assert tensor_manager.identifiers == [1, 2, 5, 6]
 
     # Test undo followed by new action.
-    print len(tensor_manager.commands)
     assert len(tensor_manager.commands) == 4
     tensor_manager.undo()
     assert (6 in tensor_manager) is False
