@@ -16,10 +16,10 @@ class Tensor(object):
         self.active = True
 
     def update_attribute(self, name, value):
-        d = dict(tensor=self.identifier)
+        d = dict(tensor_identifier=self.identifier, action="update")
         d[name] = value
-        logging.info(json.dumps(d))
         object.__setattr__(self, name, value)
+        logging.info(json.dumps(d))
 
     def activate(self):
         """Mark a tensor as active."""
@@ -110,11 +110,16 @@ class TensorManager(dict):
 
         Not for manual editing.
         """
+        d = dict(tensor_identifier=identifier, centroid=centroid,
+                 marker=marker, method=method, action="create")
+        logging.info(json.dumps(d))
         self[identifier] = Tensor(identifier, centroid, marker, method)
 
-    def _destroy_tensor(self, identifier):
+    def _delete_tensor(self, identifier):
         """Never call this directly."""
+        d = dict(tensor_identifier=identifier, action="delete")
         del self[identifier]
+        logging.info(json.dumps(d))
 
     def add_tensor(self, centroid, marker):
         """Add a tensor manually.
@@ -123,7 +128,7 @@ class TensorManager(dict):
         """
         identifier = max(self.identifiers) + 1
         cmd = Command(do_method=self.create_tensor,
-                      undo_method=self._destroy_tensor,
+                      undo_method=self._delete_tensor,
                       do_args=[identifier, centroid, marker, "manual"],
                       undo_args=[identifier])
         self.run_command(cmd)
