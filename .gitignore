@@ -1,3 +1,5 @@
+.coverage
+
 *.png
 *.csv
 *.pyc
