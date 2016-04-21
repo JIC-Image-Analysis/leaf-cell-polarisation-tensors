@@ -201,7 +201,7 @@ def test_overall_api():
     assert tensor_manager.identifiers == [1, 2, 5]
 
     # Test add_tensor undo/redo.
-    identifier = tensor_manager.add_tensor((3,4), (5,6))
+    identifier = tensor_manager.add_tensor((3, 4), (5, 6))
     assert identifier == 6
     tensor = tensor_manager[identifier]
     assert tensor.identifier == identifier
@@ -210,18 +210,17 @@ def test_overall_api():
     assert tensor.creation_type == "manual"
     assert tensor_manager.identifiers == [1, 2, 5, 6]
     tensor_manager.undo()
-    assert tensor_manager.has_key(6) is False
+    assert (6 in tensor_manager) is False
     assert tensor_manager.identifiers == [1, 2, 5]
     tensor_manager.redo()
-    assert tensor_manager.has_key(6) is True
+    assert (6 in tensor_manager) is True
     assert tensor_manager.identifiers == [1, 2, 5, 6]
-
 
     # Test undo followed by new action.
     print len(tensor_manager.commands)
     assert len(tensor_manager.commands) == 4
     tensor_manager.undo()
-    assert tensor_manager.has_key(6) is False
+    assert (6 in tensor_manager) is False
     tensor_manager.undo()
     assert len(tensor_manager.commands) == 4
     assert tensor_manager.command_offset == -2
