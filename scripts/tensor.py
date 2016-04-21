@@ -1,5 +1,9 @@
 """Module for creating, storing and editing tensors."""
 
+import json
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 class Tensor(object):
     """Class for managing individual tensors."""
@@ -11,21 +15,25 @@ class Tensor(object):
         self.creation_type = creation_type
         self.active = True
 
+    def update_attribute(self, name, value):
+        logging.info("tensor={}, {}={}".format(self.identifier, name, value))
+        object.__setattr__(self, name, value)
+
     def activate(self):
         """Mark a tensor as active."""
-        self.active = True
+        self.update_attribute("active", True)
 
     def inactivate(self):
         """Mark a tensor as inactive."""
-        self.active = False
+        self.update_attribute("active", False)
 
     def update_centroid(self, new_position):
         """Move position of a centroid."""
-        self.centroid = new_position
+        self.update_attribute("centroid", new_position)
 
     def update_marker(self, new_position):
         """Move position of a marker."""
-        self.marker = new_position
+        self.update_attribute("marker", new_position)
 
 
 class Command(object):
@@ -229,3 +237,6 @@ def test_overall_api():
     assert tensor_manager[2].centroid == (1, 1)
     assert len(tensor_manager.commands) == 3
     assert tensor_manager.command_offset == 0
+
+if __name__ == "__main__":
+    test_overall_api()
