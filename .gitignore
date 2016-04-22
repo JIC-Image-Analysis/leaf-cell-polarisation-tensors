@@ -1,4 +1,5 @@
 .coverage
+raw_tensors.txt
 
 *.png
 *.csv
