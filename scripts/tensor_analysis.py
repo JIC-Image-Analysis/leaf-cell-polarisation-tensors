@@ -6,25 +6,22 @@ import argparse
 import numpy as np
 import skimage.draw
 
-from jicbioimage.core.transform import transformation
 from jicbioimage.core.util.color import pretty_color
 from jicbioimage.core.io import (
-    AutoWrite,
     AutoName,
-)
-from jicbioimage.transform import (
-    max_intensity_projection,
-    remove_small_objects,
-    dilate_binary,
-    invert,
-)
-from jicbioimage.segment import (
-    connected_components,
-    watershed_with_seeds,
 )
 from jicbioimage.illustrate import AnnotatedImage
 
-from utils import get_microscopy_collection
+from utils import (
+    get_microscopy_collection,
+    get_wall_intensity_and_mask_images,
+    get_marker_intensity_images,
+    marker_cell_identifier,
+)
+from segment import (
+    cell_segmentation,
+    marker_segmentation,
+)
 
 AutoName.prefix_format = "{:03d}_"
 
@@ -61,64 +58,6 @@ class CellTensor(object):
                            self.centroid[1],  # x
                            self.centroid[0],  # y
                            )
-
-
-@transformation
-def identity(image):
-    return image
-
-
-@transformation
-def threshold_abs(image, threshold):
-    """Return image thresholded using the mean."""
-    return image > threshold
-
-
-def segment_zslice(image):
-    """Segment a zslice."""
-    tmp_autowrite = AutoWrite.on
-    AutoWrite.on = False
-    image = identity(image)
-    image = threshold_abs(image, 100)
-    image = remove_small_objects(image, min_size=500)
-    AutoWrite.on = tmp_autowrite
-    return image
-
-
-def preprocess_zstack(zstack_proxy_iterator, cutoff):
-    """Select the pixels where the signal is."""
-    raw = []
-    zstack = []
-    for i, proxy_image in enumerate(zstack_proxy_iterator):
-        image = proxy_image.image
-        segmented = segment_zslice(image)
-        raw.append(image)
-        zstack.append(segmented)
-    return np.dstack(raw), np.dstack(zstack)
-
-
-def cell_segmentation(wall_intensity2D, wall_mask2D):
-    """Return image segmented into cells."""
-    seeds = dilate_binary(wall_mask2D)
-    seeds = invert(seeds)
-    seeds = remove_small_objects(seeds, min_size=10)
-    seeds = connected_components(seeds, background=0)
-    return watershed_with_seeds(-wall_intensity2D, seeds=seeds)
-
-
-def marker_segmentation(marker_intensity3D, wall_mask3D):
-    """Return fluorescent marker segmentation."""
-    marker_intensity3D = marker_intensity3D * wall_mask3D
-    markers2D = max_intensity_projection(marker_intensity3D)
-    markers2D = threshold_abs(markers2D, 45)
-    markers2D = remove_small_objects(markers2D, min_size=50)
-    return connected_components(markers2D, background=0)
-
-
-def marker_cell_identifier(marker_region, cells):
-    """Return cell identifier of marker region."""
-    pos = marker_region.convex_hull.centroid
-    return cells[pos]
 
 
 def yield_cell_tensors(cells, markers):
@@ -213,12 +152,12 @@ def write_tensor_csv(cells, markers):
 def analyse(microscopy_collection):
     """Do the analysis."""
     # Prepare the input data for the segmentations.
-    wall_ziter = microscopy_collection.zstack_proxy_iterator(c=1)
-    wall_intensity3D, wall_mask3D = preprocess_zstack(wall_ziter, 90)
-    wall_intensity2D = max_intensity_projection(wall_intensity3D)
-    wall_mask2D = max_intensity_projection(wall_mask3D)
-    marker_intensity3D = microscopy_collection.zstack_array(c=0)
-    marker_intensity2D = max_intensity_projection(marker_intensity3D)
+    (wall_intensity2D,
+     wall_intensity3D,
+     wall_mask2D,
+     wall_mask3D) = get_wall_intensity_and_mask_images(microscopy_collection)
+    (marker_intensity2D,
+     marker_intensity3D) = get_marker_intensity_images(microscopy_collection)
 
     # Perform the segmentation.
     cells = cell_segmentation(wall_intensity2D, wall_mask2D)
