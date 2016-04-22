@@ -9,6 +9,7 @@ import skimage.draw
 from jicbioimage.core.util.color import pretty_color
 from jicbioimage.core.io import (
     AutoName,
+    AutoWrite,
 )
 from jicbioimage.illustrate import AnnotatedImage
 
@@ -78,6 +79,7 @@ def main():
         parser.error("No such file: {}".format(args.input_file))
 
     microscopy_collection = get_microscopy_collection(args.input_file)
+    AutoWrite.on = False
     analyse(microscopy_collection)
 
 
