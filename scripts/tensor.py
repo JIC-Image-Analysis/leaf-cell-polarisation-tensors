@@ -44,8 +44,8 @@ class Tensor(object):
     def update(self, name, value):
         """Update a property of the tensor."""
         self._data[name] = value
-        d = copy.deepcopy(self._data)
-        d["action"] = "update"
+        d = dict(identifier=self.identifier, action="update")
+        d[name] = value
         logging.info(json.dumps(d))
 
 
@@ -115,14 +115,14 @@ class TensorManager(dict):
 
         Not for manual editing.
         """
-        d = dict(tensor_identifier=identifier, centroid=centroid,
+        d = dict(identifier=identifier, centroid=centroid,
                  marker=marker, method=method, action="create")
         logging.info(json.dumps(d))
         self[identifier] = Tensor(identifier, centroid, marker, method)
 
     def _delete_tensor(self, identifier):
         """Never call this directly."""
-        d = dict(tensor_identifier=identifier, action="delete")
+        d = dict(identifier=identifier, action="delete")
         del self[identifier]
         logging.info(json.dumps(d))
 
