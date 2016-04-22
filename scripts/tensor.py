@@ -221,6 +221,19 @@ class TensorManager(dict):
                       undo_args=["marker", prev_position])
         self.run_command(cmd)
 
+    def read_raw_tensors(self, fh):
+        """Read in raw tensors from file."""
+        for line in fh:
+            tensor = Tensor.from_json(line)
+            self[tensor.identifier] = tensor
+
+    def write_raw_tensors(self, fh):
+        """Write out raw tensors to file."""
+        for identifier in self.identifiers:
+            tensor = self[identifier]
+            if tensor.creation_type == "automated":
+                fh.write("{}\n".format(tensor.json))
+
     def write_audit_log(self, fh):
         """Write out an audit log."""
         for cmd in self.commands:
@@ -337,6 +350,12 @@ def test_overall_api():
     t1_copy = Tensor.from_json(tensor1.json)
     assert t1_copy == tensor1
 
+    # Test writing of raw tensor data.
+    raw_tensor_file = "test_raw_tensors.txt"
+    with open(raw_tensor_file, "w") as fh:
+        tensor_manager.write_raw_tensors(fh)
+    assert os.path.isfile(raw_tensor_file)
+
     # Test writing of audit log.
     audit_file = "test_audit.log"
     with open(audit_file, "w") as fh:
@@ -345,15 +364,15 @@ def test_overall_api():
 
     # Test recreation from an audit file.
     new_tensor_manager = TensorManager()
-    new_tensor_manager.create_tensor(1, (0, 0), (3, 5))
-    new_tensor_manager.create_tensor(5, (4, 0), (7, 5))
-    new_tensor_manager.create_tensor(2, (2, 8), (1, 6))
+    with open(raw_tensor_file, "r") as fh:
+        new_tensor_manager.read_raw_tensors(fh)
     with open(audit_file) as fh:
         new_tensor_manager.apply_audit_log(fh)
     assert tensor_manager == new_tensor_manager
 
     # Clean up.
     os.unlink(audit_file)
+    os.unlink(raw_tensor_file)
 
 if __name__ == "__main__":
     test_overall_api()
