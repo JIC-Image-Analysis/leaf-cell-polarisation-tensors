@@ -1,5 +1,8 @@
 """Module for creating, storing and editing tensors."""
 
+import os
+import os.path
+import copy
 import json
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -10,21 +13,25 @@ class Tensor(object):
 
     def __init__(self, identifier, centroid, marker, creation_type):
         self._data = dict(identifier=identifier,
-                          centroid=tuple(centroid),
-                          marker=tuple(marker),
+                          centroid=list(centroid),
+                          marker=list(marker),
                           creation_type=creation_type,
                           active=True)
 
     def __eq__(self, other):
         return self._data == other._data
 
+    def __repr__(self):
+        print self._data
+        return "<Tensor({identifier:}, {centroid:}, {marker:}, {creation_type:}, {active:})>".format(**self._data)
+
     @staticmethod
     def from_json(line):
         """Create Tensor from json string."""
         d = json.loads(line)
         tensor =  Tensor(identifier=d["identifier"],
-                         centroid=tuple(d["centroid"]),
-                         marker=tuple(d["marker"]),
+                         centroid=list(d["centroid"]),
+                         marker=list(d["marker"]),
                          creation_type=d["creation_type"])
         tensor._data["active"] = d["active"]
         return tensor
@@ -93,6 +100,21 @@ class TensorManager(dict):
         self.commands = []
         self.command_offset = 0
 
+    def __eq__(self, other):
+        if len(self) != len(other):
+            print(len(self), len(other))
+            return False
+        for key, value in self.items():
+            if key not in other:
+                print(key)
+                return False
+            if not value == other[key]:
+                print(value, other[key])
+                return False
+        return True
+
+
+
     @property
     def identifiers(self):
         """Return sorted list of identifiers."""
@@ -136,17 +158,14 @@ class TensorManager(dict):
         self.command_offset += 1
         return self.command_offset
 
-    def create_tensor(self, identifier, centroid, marker, method="automated"):
+    def create_tensor(self, identifier, centroid, marker, creation_type="automated"):
         """Create a tensor and store it.
 
         Not for manual editing.
         """
-        self[identifier] = Tensor(identifier, centroid, marker, method)
-        d = dict(identifier=identifier,
-                 centroid=centroid,
-                 marker=marker,
-                 method=method,
-                 action="create")
+        self[identifier] = Tensor(identifier, centroid, marker, creation_type)
+        d = copy.deepcopy(self[identifier]._data)
+        d["action"] = "create"
         logging.info(json.dumps(d))
         return json.dumps(d)
 
@@ -184,7 +203,7 @@ class TensorManager(dict):
         prev_position = tensor.centroid
         cmd = Command(do_method=tensor.update,
                       undo_method=tensor.update,
-                      do_args=["centroid", new_position],
+                      do_args=["centroid", list(new_position)],
                       undo_args=["centroid", prev_position])
         self.run_command(cmd)
 
@@ -194,9 +213,35 @@ class TensorManager(dict):
         prev_position = tensor.marker
         cmd = Command(do_method=tensor.update,
                       undo_method=tensor.update,
-                      do_args=["marker", new_position],
+                      do_args=["marker", list(new_position)],
                       undo_args=["marker", prev_position])
         self.run_command(cmd)
+
+    def write_audit_log(self, fh):
+        """Write out an audit log."""
+        for cmd in self.commands:
+            fh.write("{}\n".format(cmd.audit_log))
+
+    def apply_json(self, line):
+        """Apply a line of json."""
+        d = json.loads(line)
+        action = d.pop("action")
+        if action == "update":
+            identifier = d.pop("identifier")
+            for key, value in d.items():
+                self[identifier]._data[key] = value
+        elif action == "create":
+            identifier = d["identifier"]
+            print(json.dumps(d))
+            self[identifier] = Tensor.from_json(json.dumps(d))
+        else:
+            raise(RuntimeError)
+
+
+    def apply_audit_log(self, fh):
+        """Apply an audit log."""
+        for json_line in fh:
+            self.apply_json(json_line)
 
 
 def test_overall_api():
@@ -207,8 +252,8 @@ def test_overall_api():
     tensor1 = tensor_manager[1]
     assert isinstance(tensor1, Tensor)
     assert tensor1.identifier == 1
-    assert tensor1.centroid == (0, 0)
-    assert tensor1.marker == (3, 5)
+    assert tensor1.centroid == [0, 0]
+    assert tensor1.marker == [3, 5]
     assert tensor1.creation_type == "automated"
 
     # Test inactivate tensor and undo/redo.
@@ -232,19 +277,20 @@ def test_overall_api():
 
     # Test update_centroid and undo/redo.
     tensor_manager.update_centroid(1, (1, 10))
-    assert tensor1.centroid == (1, 10)
+    print tensor1.centroid
+    assert tensor1.centroid == [1, 10]
     tensor_manager.undo()
-    assert tensor1.centroid == (0, 0)
+    assert tensor1.centroid == [0, 0]
     tensor_manager.redo()
-    assert tensor1.centroid == (1, 10)
+    assert tensor1.centroid == [1, 10]
 
     # Test update_marker and undo/redo.
     tensor_manager.update_marker(1, (100, 8))
-    assert tensor1.marker == (100, 8)
+    assert tensor1.marker == [100, 8]
     tensor_manager.undo()
-    assert tensor1.marker == (3, 5)
+    assert tensor1.marker == [3, 5]
     tensor_manager.redo()
-    assert tensor1.marker == (100, 8)
+    assert tensor1.marker == [100, 8]
 
     # Test TensorManager.identifiers property.
     assert tensor_manager.identifiers == [1]
@@ -258,8 +304,8 @@ def test_overall_api():
     assert identifier == 6
     tensor = tensor_manager[identifier]
     assert tensor.identifier == identifier
-    assert tensor.centroid == (3, 4)
-    assert tensor.marker == (5, 6)
+    assert tensor.centroid == [3, 4]
+    assert tensor.marker == [5, 6]
     assert tensor.creation_type == "manual"
     assert tensor_manager.identifiers == [1, 2, 5, 6]
     tensor_manager.undo()
@@ -276,10 +322,10 @@ def test_overall_api():
     tensor_manager.undo()
     assert len(tensor_manager.commands) == 4
     assert tensor_manager.command_offset == -2
-    assert tensor1.marker == (3, 5)
-    assert tensor_manager[2].centroid == (2, 8)
+    assert tensor1.marker == [3, 5]
+    assert tensor_manager[2].centroid == [2, 8]
     tensor_manager.update_centroid(2, (1, 1))
-    assert tensor_manager[2].centroid == (1, 1)
+    assert tensor_manager[2].centroid == [1, 1]
     assert len(tensor_manager.commands) == 3
     assert tensor_manager.command_offset == 0
 
@@ -290,9 +336,23 @@ def test_overall_api():
     t1_copy = Tensor.from_json(json.dumps(tensor1._data))
     assert t1_copy == tensor1
 
-    print("\nActions that mattered:")
-    for cmd in tensor_manager.commands:
-        print cmd.audit_log
+    # Test writing of audit log.
+    audit_file = "test_audit.log"
+    with open(audit_file, "w") as fh:
+        tensor_manager.write_audit_log(fh)
+    assert os.path.isfile(audit_file)
+
+    # Test recreation from an audit file.
+    new_tensor_manager = TensorManager()
+    new_tensor_manager.create_tensor(1, (0, 0), (3, 5))
+    new_tensor_manager.create_tensor(5, (4, 0), (7, 5))
+    new_tensor_manager.create_tensor(2, (2, 8), (1, 6))
+    with open(audit_file) as fh:
+        new_tensor_manager.apply_audit_log(fh)
+    assert tensor_manager == new_tensor_manager
+
+    # Clean up.
+    os.unlink(audit_file)
 
 if __name__ == "__main__":
     test_overall_api()
