@@ -98,17 +98,24 @@ class TensorManager(dict):
 
     def undo(self):
         """Undo the last action."""
+        logging.debug("Undoing...")
         # Command offset will be negative if we have already undone things.
         cmd_index = -1 + self.command_offset
+        # Basic checking to ensure that there is something to undo.
         if len(self.commands) + cmd_index < 0:
+            logging.debug("Nothing to undo...")
             return None
+
         self.commands[cmd_index].undo()
         self.command_offset -= 1
         return self.command_offset
 
     def redo(self):
         """Redo the last action."""
+        logging.debug("Redoing...")
+        # Basic checking to ensure that there is something to redo.
         if self.command_offset >= 0:
+            logging.debug("Nothing to redo...")
             return None
         cmd_index = self.command_offset
         self.commands[cmd_index].do()
