@@ -142,14 +142,6 @@ def annotate_simple(wall_mask2D, cells, markers):
         fh.write(ann2.png())
 
 
-def write_tensor_csv(cells, markers):
-    """Write out a tensors.csv file."""
-    with open("tensors.csv", "w") as fh:
-        fh.write(CellTensor.csv_header())
-        for cell_tensor in yield_cell_tensors(cells, markers):
-            fh.write(cell_tensor.csv_line)
-
-
 def analyse(microscopy_collection):
     """Do the analysis."""
     # Prepare the input data for the segmentations.
