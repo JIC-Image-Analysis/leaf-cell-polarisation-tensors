@@ -36,6 +36,10 @@ class Tensor(object):
         return tensor
 
     @property
+    def json(self):
+        return json.dumps(self._data)
+
+    @property
     def identifier(self):
         """Return the tensor identifier."""
         return self._data["identifier"]
@@ -326,8 +330,8 @@ def test_overall_api():
     # Manually create another tenor.
     identifier = tensor_manager.add_tensor((3, 4), (5, 6))
 
-    # Test creation of tensor using from_json static method.
-    t1_copy = Tensor.from_json(json.dumps(tensor1._data))
+    # Test tensor json property and from_json static method.
+    t1_copy = Tensor.from_json(tensor1.json)
     assert t1_copy == tensor1
 
     # Test writing of audit log.
