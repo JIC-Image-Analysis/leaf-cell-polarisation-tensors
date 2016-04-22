@@ -25,7 +25,7 @@ class Tensor(object):
 class Command(object):
     """Command class to enable undo/redo functionality."""
 
-    def __init__(self, do_method, undo_method, do_args=None, undo_args=None):
+    def __init__(self, do_method, undo_method, do_args, undo_args):
         self.do_method = do_method
         self.do_args = do_args
         self.undo_method = undo_method
@@ -33,17 +33,11 @@ class Command(object):
 
     def do(self):
         """Execute a command."""
-        if self.do_args is None:
-            self.do_method()
-        else:
-            self.do_method(*self.do_args)
+        self.do_method(*self.do_args)
 
     def undo(self):
         """Reverse the effect of a command."""
-        if self.undo_args is None:
-            self.undo_method()
-        else:
-            self.undo_method(*self.undo_args)
+        self.undo_method(*self.undo_args)
 
 
 class TensorManager(dict):
