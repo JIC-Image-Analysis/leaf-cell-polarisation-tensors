@@ -1,5 +1,6 @@
 """Module for creating, storing and editing tensors."""
 
+import copy
 import json
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -9,16 +10,42 @@ class Tensor(object):
     """Class for managing individual tensors."""
 
     def __init__(self, identifier, centroid, marker, creation_type):
-        self.identifier = identifier
-        self.centroid = centroid
-        self.marker = marker
-        self.creation_type = creation_type
-        self.active = True
+        self._data = dict(identifier=identifier,
+                          centroid=centroid,
+                          marker=marker,
+                          creation_type=creation_type,
+                          active=True)
+
+    @property
+    def identifier(self):
+        """Return the tensor identifier."""
+        return self._data["identifier"]
+
+    @property
+    def centroid(self):
+        """Return the cell centroid position."""
+        return self._data["centroid"]
+
+    @property
+    def marker(self):
+        """Return the membrane marker position."""
+        return self._data["marker"]
+
+    @property
+    def creation_type(self):
+        """Return the creation type (automated/manual)."""
+        return self._data["creation_type"]
+
+    @property
+    def active(self):
+        """Return the active status of the tensor (True/False)."""
+        return self._data["active"]
 
     def update(self, name, value):
-        d = dict(tensor_identifier=self.identifier, action="update")
-        d[name] = value
-        object.__setattr__(self, name, value)
+        """Update a property of the tensor."""
+        self._data[name] = value
+        d = copy.deepcopy(self._data)
+        d["action"] = "update"
         logging.info(json.dumps(d))
 
 
