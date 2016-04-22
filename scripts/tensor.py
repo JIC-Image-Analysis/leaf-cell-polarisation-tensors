@@ -1,6 +1,5 @@
 """Module for creating, storing and editing tensors."""
 
-import copy
 import json
 import logging
 logging.basicConfig(level=logging.DEBUG)
