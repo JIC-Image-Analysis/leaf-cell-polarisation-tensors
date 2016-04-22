@@ -2,7 +2,7 @@ Pillow==3.0.0
 decorator==4.0.4
 funcsigs==0.4
 jicbioimage.core==0.10.1
-jicbioimage.illustrate==0.4.0
+jicbioimage.illustrate==0.6.0
 jicbioimage.segment==0.2.0
 jicbioimage.transform==0.5.1
 matplotlib==1.4.3
