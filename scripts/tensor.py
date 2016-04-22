@@ -21,22 +21,6 @@ class Tensor(object):
         object.__setattr__(self, name, value)
         logging.info(json.dumps(d))
 
-    def activate(self):
-        """Mark a tensor as active."""
-        self.update_attribute("active", True)
-
-    def inactivate(self):
-        """Mark a tensor as inactive."""
-        self.update_attribute("active", False)
-
-    def update_centroid(self, new_position):
-        """Move position of a centroid."""
-        self.update_attribute("centroid", new_position)
-
-    def update_marker(self, new_position):
-        """Move position of a marker."""
-        self.update_attribute("marker", new_position)
-
 
 class Command(object):
     """Command class to enable undo/redo functionality."""
@@ -137,27 +121,30 @@ class TensorManager(dict):
     def inactivate_tensor(self, identifier):
         """Mark a tensor as inactive."""
         tensor = self[identifier]
-        cmd = Command(tensor.inactivate, tensor.activate)
+        cmd = Command(do_method=tensor.update_attribute,
+                      undo_method=tensor.update_attribute,
+                      do_args=["active", False],
+                      undo_args=["active", True])
         self.run_command(cmd)
 
     def update_centroid(self, identifier, new_position):
         """Update the position of a centroid."""
         tensor = self[identifier]
         prev_position = tensor.centroid
-        cmd = Command(do_method=tensor.update_centroid,
-                      undo_method=tensor.update_centroid,
-                      do_args=[new_position],
-                      undo_args=[prev_position])
+        cmd = Command(do_method=tensor.update_attribute,
+                      undo_method=tensor.update_attribute,
+                      do_args=["centroid", new_position],
+                      undo_args=["centroid", prev_position])
         self.run_command(cmd)
 
     def update_marker(self, identifier, new_position):
         """Update the position of a marker."""
         tensor = self[identifier]
         prev_position = tensor.marker
-        cmd = Command(do_method=tensor.update_marker,
-                      undo_method=tensor.update_marker,
-                      do_args=[new_position],
-                      undo_args=[prev_position])
+        cmd = Command(do_method=tensor.update_attribute,
+                      undo_method=tensor.update_attribute,
+                      do_args=["marker", new_position],
+                      undo_args=["marker", prev_position])
         self.run_command(cmd)
 
 
