@@ -15,7 +15,7 @@ class Tensor(object):
         self.creation_type = creation_type
         self.active = True
 
-    def update_attribute(self, name, value):
+    def update(self, name, value):
         d = dict(tensor_identifier=self.identifier, action="update")
         d[name] = value
         object.__setattr__(self, name, value)
@@ -121,8 +121,8 @@ class TensorManager(dict):
     def inactivate_tensor(self, identifier):
         """Mark a tensor as inactive."""
         tensor = self[identifier]
-        cmd = Command(do_method=tensor.update_attribute,
-                      undo_method=tensor.update_attribute,
+        cmd = Command(do_method=tensor.update,
+                      undo_method=tensor.update,
                       do_args=["active", False],
                       undo_args=["active", True])
         self.run_command(cmd)
@@ -131,8 +131,8 @@ class TensorManager(dict):
         """Update the position of a centroid."""
         tensor = self[identifier]
         prev_position = tensor.centroid
-        cmd = Command(do_method=tensor.update_attribute,
-                      undo_method=tensor.update_attribute,
+        cmd = Command(do_method=tensor.update,
+                      undo_method=tensor.update,
                       do_args=["centroid", new_position],
                       undo_args=["centroid", prev_position])
         self.run_command(cmd)
@@ -141,8 +141,8 @@ class TensorManager(dict):
         """Update the position of a marker."""
         tensor = self[identifier]
         prev_position = tensor.marker
-        cmd = Command(do_method=tensor.update_attribute,
-                      undo_method=tensor.update_attribute,
+        cmd = Command(do_method=tensor.update,
+                      undo_method=tensor.update,
                       do_args=["marker", new_position],
                       undo_args=["marker", prev_position])
         self.run_command(cmd)
