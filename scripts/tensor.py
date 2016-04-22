@@ -41,11 +41,15 @@ class Tensor(object):
         return self._data["active"]
 
     def update(self, name, value):
-        """Update a property of the tensor."""
+        """Update a property of the tensor.
+
+        :returns: json string describing update
+        """
         self._data[name] = value
         d = dict(identifier=self.identifier, action="update")
         d[name] = value
         logging.info(json.dumps(d))
+        return json.dumps(d)
 
 
 class Command(object):
@@ -56,10 +60,12 @@ class Command(object):
         self.do_args = do_args
         self.undo_method = undo_method
         self.undo_args = undo_args
+        self.audit_log = None
 
     def do(self):
         """Execute a command."""
-        self.do_method(*self.do_args)
+        self.audit_log = self.do_method(*self.do_args)
+
 
     def undo(self):
         """Reverse the effect of a command."""
@@ -114,10 +120,14 @@ class TensorManager(dict):
 
         Not for manual editing.
         """
-        d = dict(identifier=identifier, centroid=centroid,
-                 marker=marker, method=method, action="create")
-        logging.info(json.dumps(d))
         self[identifier] = Tensor(identifier, centroid, marker, method)
+        d = dict(identifier=identifier,
+                 centroid=centroid,
+                 marker=marker,
+                 method=method,
+                 action="create")
+        logging.info(json.dumps(d))
+        return json.dumps(d)
 
     def _delete_tensor(self, identifier):
         """Never call this directly."""
@@ -251,6 +261,9 @@ def test_overall_api():
     assert tensor_manager[2].centroid == (1, 1)
     assert len(tensor_manager.commands) == 3
     assert tensor_manager.command_offset == 0
+
+    for cmd in tensor_manager.commands:
+        print cmd.audit_log
 
 if __name__ == "__main__":
     test_overall_api()
