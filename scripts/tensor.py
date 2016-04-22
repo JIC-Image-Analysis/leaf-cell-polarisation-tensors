@@ -10,10 +10,24 @@ class Tensor(object):
 
     def __init__(self, identifier, centroid, marker, creation_type):
         self._data = dict(identifier=identifier,
-                          centroid=centroid,
-                          marker=marker,
+                          centroid=tuple(centroid),
+                          marker=tuple(marker),
                           creation_type=creation_type,
                           active=True)
+
+    def __eq__(self, other):
+        return self._data == other._data
+
+    @staticmethod
+    def from_json(line):
+        """Create Tensor from json string."""
+        d = json.loads(line)
+        tensor =  Tensor(identifier=d["identifier"],
+                         centroid=tuple(d["centroid"]),
+                         marker=tuple(d["marker"]),
+                         creation_type=d["creation_type"])
+        tensor._data["active"] = d["active"]
+        return tensor
 
     @property
     def identifier(self):
@@ -269,6 +283,14 @@ def test_overall_api():
     assert len(tensor_manager.commands) == 3
     assert tensor_manager.command_offset == 0
 
+    # Manually create another tenor.
+    identifier = tensor_manager.add_tensor((3, 4), (5, 6))
+
+    # Test creation of tensor using from_json static method.
+    t1_copy = Tensor.from_json(json.dumps(tensor1._data))
+    assert t1_copy == tensor1
+
+    print("\nActions that mattered:")
     for cmd in tensor_manager.commands:
         print cmd.audit_log
 
