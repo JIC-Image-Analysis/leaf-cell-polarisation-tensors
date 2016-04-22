@@ -22,6 +22,7 @@ from segment import (
     cell_segmentation,
     marker_segmentation,
 )
+from tensor import get_tensors
 
 AutoName.prefix_format = "{:03d}_"
 
@@ -163,12 +164,17 @@ def analyse(microscopy_collection):
     cells = cell_segmentation(wall_intensity2D, wall_mask2D)
     markers = marker_segmentation(marker_intensity3D, wall_mask3D)
 
-    # Create annotated images.
-    annotate(cells, markers, wall_intensity2D, marker_intensity2D*wall_mask2D)
-    annotate_simple(wall_mask2D, cells, markers)
+    # Get tensors.
+    tensors = get_tensors(cells, markers)
+    with open("raw_tensors.txt", "w") as fh:
+        tensors.write_raw_tensors(fh)
 
-    # Write out csv file.
-    write_tensor_csv(cells, markers)
+#   # Create annotated images.
+#   annotate(cells, markers, wall_intensity2D, marker_intensity2D*wall_mask2D)
+#   annotate_simple(wall_mask2D, cells, markers)
+
+#   # Write out csv file.
+#   write_tensor_csv(cells, markers)
 
 
 def main():

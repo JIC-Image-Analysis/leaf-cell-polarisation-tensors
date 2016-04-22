@@ -7,6 +7,8 @@ import json
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
+from utils import marker_cell_identifier
+
 
 class Tensor(object):
     """Class for managing individual tensors."""
@@ -174,7 +176,8 @@ class TensorManager(dict):
 
         Not for manual editing.
         """
-        self[tensor_id] = Tensor(tensor_id, cell_id, centroid, marker, creation_type)
+        self[tensor_id] = Tensor(tensor_id, cell_id, centroid,
+                                 marker, creation_type)
         d = copy.deepcopy(self[tensor_id]._data)
         d["action"] = "create"
         logging.info(json.dumps(d))
@@ -264,6 +267,20 @@ class TensorManager(dict):
         """Apply an audit log."""
         for json_line in fh:
             self.apply_json(json_line)
+
+
+def get_tensors(cells, markers):
+    """Return TensorManager instance."""
+    tensor_manager = TensorManager()
+    for tensor_id, marker_id in enumerate(markers.identifiers):
+        m_region = markers.region_by_identifier(marker_id)
+        marker_position = m_region.convex_hull.centroid
+        cell_id = marker_cell_identifier(m_region, cells)
+        c_region = cells.region_by_identifier(cell_id)
+        centroid = c_region.centroid
+        tensor_manager.create_tensor(tensor_id, cell_id,
+                                     centroid, marker_position)
+    return tensor_manager
 
 
 def test_overall_api():
