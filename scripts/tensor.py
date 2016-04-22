@@ -11,8 +11,8 @@ logging.basicConfig(level=logging.DEBUG)
 class Tensor(object):
     """Class for managing individual tensors."""
 
-    def __init__(self, identifier, centroid, marker, creation_type):
-        self._data = dict(identifier=identifier,
+    def __init__(self, tensor_id, centroid, marker, creation_type):
+        self._data = dict(tensor_id=tensor_id,
                           centroid=list(centroid),
                           marker=list(marker),
                           creation_type=creation_type,
@@ -25,7 +25,7 @@ class Tensor(object):
         prefix = "<Tensor("
         suffix = ")>"
         info = []
-        for key in ["identifier", "centroid", "marker",
+        for key in ["tensor_id", "centroid", "marker",
                     "creation_type", "active"]:
             info.append("{}={}".format(key, self._data[key]))
         return prefix + ", ".join(info) + suffix
@@ -34,7 +34,7 @@ class Tensor(object):
     def from_json(line):
         """Create Tensor from json string."""
         d = json.loads(line)
-        tensor = Tensor(identifier=d["identifier"],
+        tensor = Tensor(tensor_id=d["tensor_id"],
                         centroid=list(d["centroid"]),
                         marker=list(d["marker"]),
                         creation_type=d["creation_type"])
@@ -46,9 +46,9 @@ class Tensor(object):
         return json.dumps(self._data)
 
     @property
-    def identifier(self):
-        """Return the tensor identifier."""
-        return self._data["identifier"]
+    def tensor_id(self):
+        """Return the tensor tensor_id."""
+        return self._data["tensor_id"]
 
     @property
     def centroid(self):
@@ -76,7 +76,7 @@ class Tensor(object):
         :returns: json string describing update
         """
         self._data[name] = value
-        d = dict(identifier=self.identifier, action="update")
+        d = dict(tensor_id=self.tensor_id, action="update")
         d[name] = value
         logging.info(json.dumps(d))
         return json.dumps(d)
@@ -161,22 +161,22 @@ class TensorManager(dict):
         self.command_offset += 1
         return self.command_offset
 
-    def create_tensor(self, identifier, centroid, marker,
+    def create_tensor(self, tensor_id, centroid, marker,
                       creation_type="automated"):
         """Create a tensor and store it.
 
         Not for manual editing.
         """
-        self[identifier] = Tensor(identifier, centroid, marker, creation_type)
-        d = copy.deepcopy(self[identifier]._data)
+        self[tensor_id] = Tensor(tensor_id, centroid, marker, creation_type)
+        d = copy.deepcopy(self[tensor_id]._data)
         d["action"] = "create"
         logging.info(json.dumps(d))
         return json.dumps(d)
 
-    def _delete_tensor(self, identifier):
+    def _delete_tensor(self, tensor_id):
         """Never call this directly."""
-        d = dict(identifier=identifier, action="delete")
-        del self[identifier]
+        d = dict(tensor_id=tensor_id, action="delete")
+        del self[tensor_id]
         logging.info(json.dumps(d))
 
     def add_tensor(self, centroid, marker):
@@ -184,26 +184,26 @@ class TensorManager(dict):
 
         For manual editing with undo.
         """
-        identifier = max(self.identifiers) + 1
+        tensor_id = max(self.identifiers) + 1
         cmd = Command(do_method=self.create_tensor,
                       undo_method=self._delete_tensor,
-                      do_args=[identifier, centroid, marker, "manual"],
-                      undo_args=[identifier])
+                      do_args=[tensor_id, centroid, marker, "manual"],
+                      undo_args=[tensor_id])
         self.run_command(cmd)
-        return identifier
+        return tensor_id
 
-    def inactivate_tensor(self, identifier):
+    def inactivate_tensor(self, tensor_id):
         """Mark a tensor as inactive."""
-        tensor = self[identifier]
+        tensor = self[tensor_id]
         cmd = Command(do_method=tensor.update,
                       undo_method=tensor.update,
                       do_args=["active", False],
                       undo_args=["active", True])
         self.run_command(cmd)
 
-    def update_centroid(self, identifier, new_position):
+    def update_centroid(self, tensor_id, new_position):
         """Update the position of a centroid."""
-        tensor = self[identifier]
+        tensor = self[tensor_id]
         prev_position = tensor.centroid
         cmd = Command(do_method=tensor.update,
                       undo_method=tensor.update,
@@ -211,9 +211,9 @@ class TensorManager(dict):
                       undo_args=["centroid", prev_position])
         self.run_command(cmd)
 
-    def update_marker(self, identifier, new_position):
+    def update_marker(self, tensor_id, new_position):
         """Update the position of a marker."""
-        tensor = self[identifier]
+        tensor = self[tensor_id]
         prev_position = tensor.marker
         cmd = Command(do_method=tensor.update,
                       undo_method=tensor.update,
@@ -225,12 +225,12 @@ class TensorManager(dict):
         """Read in raw tensors from file."""
         for line in fh:
             tensor = Tensor.from_json(line)
-            self[tensor.identifier] = tensor
+            self[tensor.tensor_id] = tensor
 
     def write_raw_tensors(self, fh):
         """Write out raw tensors to file."""
-        for identifier in self.identifiers:
-            tensor = self[identifier]
+        for tensor_id in self.identifiers:
+            tensor = self[tensor_id]
             if tensor.creation_type == "automated":
                 fh.write("{}\n".format(tensor.json))
 
@@ -244,12 +244,12 @@ class TensorManager(dict):
         d = json.loads(line)
         action = d.pop("action")
         if action == "update":
-            identifier = d.pop("identifier")
+            tensor_id = d.pop("tensor_id")
             for key, value in d.items():
-                self[identifier]._data[key] = value
+                self[tensor_id]._data[key] = value
         elif action == "create":
-            identifier = d["identifier"]
-            self[identifier] = Tensor.from_json(json.dumps(d))
+            tensor_id = d["tensor_id"]
+            self[tensor_id] = Tensor.from_json(json.dumps(d))
         else:
             raise(RuntimeError)
 
@@ -266,7 +266,7 @@ def test_overall_api():
     tensor_manager.create_tensor(1, (0, 0), (3, 5))
     tensor1 = tensor_manager[1]
     assert isinstance(tensor1, Tensor)
-    assert tensor1.identifier == 1
+    assert tensor1.tensor_id == 1
     assert tensor1.centroid == [0, 0]
     assert tensor1.marker == [3, 5]
     assert tensor1.creation_type == "automated"
@@ -314,10 +314,10 @@ def test_overall_api():
     assert tensor_manager.identifiers == [1, 2, 5]
 
     # Test add_tensor undo/redo.
-    identifier = tensor_manager.add_tensor((3, 4), (5, 6))
-    assert identifier == 6
-    tensor = tensor_manager[identifier]
-    assert tensor.identifier == identifier
+    tensor_id = tensor_manager.add_tensor((3, 4), (5, 6))
+    assert tensor_id == 6
+    tensor = tensor_manager[tensor_id]
+    assert tensor.tensor_id == tensor_id
     assert tensor.centroid == [3, 4]
     assert tensor.marker == [5, 6]
     assert tensor.creation_type == "manual"
@@ -344,7 +344,7 @@ def test_overall_api():
     assert tensor_manager.command_offset == 0
 
     # Manually create another tenor.
-    identifier = tensor_manager.add_tensor((3, 4), (5, 6))
+    tensor_id = tensor_manager.add_tensor((3, 4), (5, 6))
 
     # Test tensor json property and from_json static method.
     t1_copy = Tensor.from_json(tensor1.json)
