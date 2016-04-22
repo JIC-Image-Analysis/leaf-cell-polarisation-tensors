@@ -22,16 +22,22 @@ class Tensor(object):
         return self._data == other._data
 
     def __repr__(self):
-        return "<Tensor({identifier:}, {centroid:}, {marker:}, {creation_type:}, {active:})>".format(**self._data)
+        prefix = "<Tensor("
+        suffix = ")>"
+        info = []
+        for key in ["identifier", "centroid", "marker",
+                    "creation_type", "active"]:
+            info.append("{}={}".format(key, self._data[key]))
+        return prefix + ", ".join(info) + suffix
 
     @staticmethod
     def from_json(line):
         """Create Tensor from json string."""
         d = json.loads(line)
-        tensor =  Tensor(identifier=d["identifier"],
-                         centroid=list(d["centroid"]),
-                         marker=list(d["marker"]),
-                         creation_type=d["creation_type"])
+        tensor = Tensor(identifier=d["identifier"],
+                        centroid=list(d["centroid"]),
+                        marker=list(d["marker"]),
+                        creation_type=d["creation_type"])
         tensor._data["active"] = d["active"]
         return tensor
 
@@ -90,7 +96,6 @@ class Command(object):
         """Execute a command."""
         self.audit_log = self.do_method(*self.do_args)
 
-
     def undo(self):
         """Reverse the effect of a command."""
         self.undo_method(*self.undo_args)
@@ -112,8 +117,6 @@ class TensorManager(dict):
             if not value == other[key]:
                 return False
         return True
-
-
 
     @property
     def identifiers(self):
@@ -158,7 +161,8 @@ class TensorManager(dict):
         self.command_offset += 1
         return self.command_offset
 
-    def create_tensor(self, identifier, centroid, marker, creation_type="automated"):
+    def create_tensor(self, identifier, centroid, marker,
+                      creation_type="automated"):
         """Create a tensor and store it.
 
         Not for manual editing.
@@ -235,7 +239,6 @@ class TensorManager(dict):
             self[identifier] = Tensor.from_json(json.dumps(d))
         else:
             raise(RuntimeError)
-
 
     def apply_audit_log(self, fh):
         """Apply an audit log."""
