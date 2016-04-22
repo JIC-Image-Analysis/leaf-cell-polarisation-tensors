@@ -22,7 +22,6 @@ class Tensor(object):
         return self._data == other._data
 
     def __repr__(self):
-        print self._data
         return "<Tensor({identifier:}, {centroid:}, {marker:}, {creation_type:}, {active:})>".format(**self._data)
 
     @staticmethod
@@ -102,14 +101,11 @@ class TensorManager(dict):
 
     def __eq__(self, other):
         if len(self) != len(other):
-            print(len(self), len(other))
             return False
         for key, value in self.items():
             if key not in other:
-                print(key)
                 return False
             if not value == other[key]:
-                print(value, other[key])
                 return False
         return True
 
@@ -232,7 +228,6 @@ class TensorManager(dict):
                 self[identifier]._data[key] = value
         elif action == "create":
             identifier = d["identifier"]
-            print(json.dumps(d))
             self[identifier] = Tensor.from_json(json.dumps(d))
         else:
             raise(RuntimeError)
@@ -277,7 +272,6 @@ def test_overall_api():
 
     # Test update_centroid and undo/redo.
     tensor_manager.update_centroid(1, (1, 10))
-    print tensor1.centroid
     assert tensor1.centroid == [1, 10]
     tensor_manager.undo()
     assert tensor1.centroid == [0, 0]
