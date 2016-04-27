@@ -29,6 +29,7 @@ from annotate import (
     annotate_markers,
     annotate_tensors,
 )
+from svg import write_svg
 
 AutoName.prefix_format = "{:03d}_"
 
@@ -68,6 +69,10 @@ def analyse(microscopy_collection):
     ydim, xdim = wall_mask2D.shape
     with open("tensors.png", "wb") as fh:
         annotate_tensors(ydim, xdim, tensors, fh)
+
+    # Write out svg image.
+    with open("annotated.svg", "w") as fh:
+        write_svg(ydim, xdim, tensors, "segmentation.png", fh)
 
 
 def main():
