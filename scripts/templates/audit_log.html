@@ -1,0 +1,15 @@
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+<title>Tensor editing audit log</title>
+</head>
+<body>
+  <h1>Tensor editing audit log</h1>
+
+  {% for cmd in tensor_manager.commands %}
+    <p>{{ cmd.audit_log }}</p>
+  {% endfor %}
+
+</body>
+</html>

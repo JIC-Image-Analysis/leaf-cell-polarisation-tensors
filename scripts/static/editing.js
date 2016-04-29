@@ -74,7 +74,7 @@ function movePoint(event) {
   }
 }
 
-function deleteTensor(event) {
+function inactivateTensor(event) {
   var words = this.id.split("-");
   var type = words[0];
   var id = words[1];
@@ -83,6 +83,11 @@ function deleteTensor(event) {
   document.getElementById(this.id).setAttribute("visibility", "hidden");
   document.getElementById(marker_id).setAttribute("visibility", "hidden");
   document.getElementById(centroid_id).setAttribute("visibility", "hidden");
+
+  // Ajax call.
+  var xhttp = new XMLHttpRequest();
+  xhttp.open("POST", "inactivate_tensor/" + id, true);
+  xhttp.send()
 }
 
 
@@ -103,7 +108,7 @@ function init() {
   for (var i = 0; i < tensors.length; i++) {
     tensors[i].onmouseover = function(event) {document.getElementById(this.id).setAttribute("stroke", "red");};
     tensors[i].onmouseout = function(event) {document.getElementById(this.id).setAttribute("stroke", "black");};
-    tensors[i].onmousedown = deleteTensor;
+    tensors[i].onmousedown = inactivateTensor;
   }
 
   document.getElementById("segmentation").onmousedown = movePoint;
