@@ -44,6 +44,20 @@ function svgCursorPoint(event) {
   return pt.matrixTransform(svg.getScreenCTM().inverse());
 }
 
+function updateMarker(id, y, x) {
+  var tensor_id = "tensor-" + id
+  var tensor = document.getElementById(tensor_id);
+  tensor.setAttribute("x1", x);
+  tensor.setAttribute("y1", y);
+}
+
+function updateCentroid(id, y, x) {
+  var tensor_id = "tensor-" + id
+  var tensor = document.getElementById(tensor_id);
+  tensor.setAttribute("x2", x);
+  tensor.setAttribute("y2", y);
+}
+
 function movePoint(event) {
 
   // If there is no centroid/marker selected do nothing.
@@ -63,14 +77,10 @@ function movePoint(event) {
   var words = selected.split("-");
   var type = words[0];
   var id = words[1];
-  var tensor_id = "tensor-" + id
-  var tensor = document.getElementById(tensor_id);
   if (type == "marker") {
-    tensor.setAttribute("x1", pt.x);
-    tensor.setAttribute("y1", pt.y);
+    updateMarker(id, pt.y, pt.x);
   } else if (type == "centroid") {
-    tensor.setAttribute("x2", pt.x);
-    tensor.setAttribute("y2", pt.y);
+    updateCentroid(id, pt.y, pt.x);
   }
 }
 
