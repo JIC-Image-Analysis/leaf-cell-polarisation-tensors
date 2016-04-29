@@ -28,7 +28,7 @@ def inactivate_tensor(tensor_id):
     if request.method == "POST":
         app.tensor_manager.inactivate_tensor(tensor_id)
         app.logger.debug("Inactivated tensor {:d}".format(tensor_id))
-    return "Inactivated tensor {:d}\n".format(tensor_id)
+        return "Inactivated tensor {:d}\n".format(tensor_id)
 
 
 @app.route("/update_marker/<int:tensor_id>/<float:y>/<float:x>", methods=["POST"])
@@ -36,7 +36,7 @@ def update_marker(tensor_id, y, x):
     if request.method == "POST":
         app.tensor_manager.update_marker(tensor_id, (y, x))
         app.logger.debug("Updated tensor {:d} marker to ({:.2f}, {:.2f})\n".format(tensor_id, y, x))
-    return "Updated tensor {:d} marker to ({:.2f}, {:.2f})\n".format(tensor_id, y, x)
+        return "Updated tensor {:d} marker to ({:.2f}, {:.2f})\n".format(tensor_id, y, x)
 
 
 @app.route("/update_centroid/<int:tensor_id>/<float:y>/<float:x>", methods=["POST"])
@@ -44,8 +44,13 @@ def update_centroid(tensor_id, y, x):
     if request.method == "POST":
         app.tensor_manager.update_centroid(tensor_id, (y, x))
         app.logger.debug("Updated tensor {:d} centroid to ({:.2f}, {:.2f})\n".format(tensor_id, y, x))
-    return "Updated tensor {:d} centroid to ({:.2f}, {:.2f})\n".format(tensor_id, y, x)
+        return "Updated tensor {:d} centroid to ({:.2f}, {:.2f})\n".format(tensor_id, y, x)
 
+
+@app.route("/undo", methods=["POST"])
+def undo():
+    if request.method == "POST":
+        return "{}\n".format(app.tensor_manager.undo())
 
 @app.route("/audit_log")
 def audit_log():

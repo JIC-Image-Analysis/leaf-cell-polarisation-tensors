@@ -107,7 +107,7 @@ class Command(object):
 
     def undo(self):
         """Reverse the effect of a command."""
-        self.undo_method(*self.undo_args)
+        return self.undo_method(*self.undo_args)
 
 
 class TensorManager(dict):
@@ -154,9 +154,9 @@ class TensorManager(dict):
             logging.debug("Nothing to undo...")
             return None
 
-        self.commands[cmd_index].undo()
+        info = self.commands[cmd_index].undo()
         self.command_offset -= 1
-        return self.command_offset
+        return info
 
     def redo(self):
         """Redo the last action."""
