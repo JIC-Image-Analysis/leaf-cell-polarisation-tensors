@@ -1,25 +1,40 @@
 """Basic webapp for editing tensors."""
 
+import os.path
+import argparse
+import PIL
 from flask import Flask, render_template, url_for
 from tensor import TensorManager
 
-app = Flask(__name__)
+from utils import HERE
 
-# For testing.
-ydim, xdim = 1362, 836
-tensor_manager = TensorManager()
-with open("raw_tensors.txt") as fh:
-    tensor_manager.read_raw_tensors(fh)
-tensors = [tensor_manager[i] for i in tensor_manager.identifiers]
+app = Flask(__name__)
 
 @app.route("/")
 def index():
+    im_fname = "segmentation.png"
+    im_fpath = os.path.join(HERE, "static", im_fname)
+    im = PIL.Image.open(im_fpath)
+    xdim, ydim = im.size
     return render_template("template.html",
                            xdim=xdim,
                            ydim=ydim,
-                           tensors=tensors,
-                           raster_fname=url_for("static", filename="segmentation.png"))
+                           tensors=app.tensors,
+                           raster_fname=url_for("static", filename=im_fname))
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("raw_tensors", help="path to file")
+    args = parser.parse_args()
+
+    if not os.path.isfile(args.raw_tensors):
+        parser.error("No such file {}".format(args.raw_tensors))
+
+    tensor_manager = TensorManager()
+    with open(args.raw_tensors) as fh:
+        tensor_manager.read_raw_tensors(fh)
+    tensors = [tensor_manager[i] for i in tensor_manager.identifiers]
+    app.tensors = tensors
+
     app.run(debug=True)
