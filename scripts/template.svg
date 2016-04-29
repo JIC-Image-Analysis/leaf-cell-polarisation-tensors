@@ -7,29 +7,55 @@
      xmlns:xlink="http://www.w3.org/1999/xlink">
 
   <defs>
-      <marker id="Triangle"
-              viewBox="0 0 10 10" 
-              refX="1" refY="5"
-              markerWidth="6" 
-              markerHeight="6"
-              orient="auto">
-          <path d="M 0 0 L 10 5 L 0 10 z" />
-
+    <marker id="Triangle"
+            viewBox="0 0 10 10"
+            refX="1" refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto">
+        <path d="M 0 0 L 10 5 L 0 10 z" />
+    </marker>
+    <marker id="Circle"
+            viewBox="0 0 10 10"
+            refX="5" refY="5"
+            markerWidth="6"
+            markerHeight="6"
+            orient="auto">
+        <circle cx="5" cy="5" r="3" />
     </marker>
   </defs>
 
-  <image x="0" y="0" width="{{ xdim }}" height="{{ ydim }}"
+  <image id="segmentation" x="0" y="0" width="{{ xdim }}" height="{{ ydim }}"
    xlink:href="{{ raster_fname }}" />
 
   {% for tensor in tensors %}
-    <line x1="{{ tensor.marker[1] }}"
+    <line id="tensor-{{ tensor.tensor_id }}"
+          x1="{{ tensor.marker[1] }}"
           y1="{{ tensor.marker[0] }}"
           x2="{{ tensor.centroid[1] }}"
           y2="{{ tensor.centroid[0] }}"
           fill="none"
           stroke="black"
           stroke-width="2"
+          marker-start="url(#Circle)"
           marker-end="url(#Triangle)" />
+    <circle id="marker-{{ tensor.tensor_id }}"
+            class="marker"
+            draggable="true"
+            cx="{{ tensor.marker[1] }}"
+            cy="{{ tensor.marker[0] }}"
+            r="3"
+            fill="black"
+            stroke="black" />
+    <circle id="centroid-{{ tensor.tensor_id }}"
+            class="centroid"
+            draggable="true"
+            cx="{{ tensor.centroid[1] }}"
+            cy="{{ tensor.centroid[0] }}"
+            r="3"
+            fill="black"
+            stroke="black" />
+
   {% endfor %}
 
 </svg>
