@@ -49,6 +49,12 @@ function updateMarker(id, y, x) {
   var tensor = document.getElementById(tensor_id);
   tensor.setAttribute("x1", x);
   tensor.setAttribute("y1", y);
+
+  // Ajax call.
+  var xhttp = new XMLHttpRequest();
+  var url = "update_marker/" + id + "/" + y.toFixed(4) + "/" + x.toFixed(4)
+  xhttp.open("POST", url, true);
+  xhttp.send()
 }
 
 function updateCentroid(id, y, x) {
@@ -56,6 +62,12 @@ function updateCentroid(id, y, x) {
   var tensor = document.getElementById(tensor_id);
   tensor.setAttribute("x2", x);
   tensor.setAttribute("y2", y);
+
+  // Ajax call.
+  var xhttp = new XMLHttpRequest();
+  var url = "update_centroid/" + id + "/" + y.toFixed(4) + "/" + x.toFixed(4)
+  xhttp.open("POST", url, true);
+  xhttp.send()
 }
 
 function movePoint(event) {
