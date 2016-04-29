@@ -5,7 +5,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from utils import HERE
 
-env = Environment(loader=FileSystemLoader(HERE))
+env = Environment(loader=FileSystemLoader(os.path.join(HERE, "templates")))
 svg_template = env.get_template("template.svg")
 svg_template = env.get_template("template.html")
 
