@@ -30,6 +30,7 @@
 
   {% for tensor in tensors %}
     <line id="tensor-{{ tensor.tensor_id }}"
+          class="tensor"
           x1="{{ tensor.marker[1] }}"
           y1="{{ tensor.marker[0] }}"
           x2="{{ tensor.centroid[1] }}"

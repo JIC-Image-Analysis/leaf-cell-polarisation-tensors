@@ -80,7 +80,17 @@ function movePoint(event) {
     tensor.setAttribute("x2", pt.x);
     tensor.setAttribute("y2", pt.y);
   }
+}
 
+function deleteTensor(event) {
+  var words = this.id.split("-");
+  var type = words[0];
+  var id = words[1];
+  var marker_id = "marker-" + id
+  var centroid_id = "centroid-" + id
+  document.getElementById(this.id).setAttribute("visibility", "hidden");
+  document.getElementById(marker_id).setAttribute("visibility", "hidden");
+  document.getElementById(centroid_id).setAttribute("visibility", "hidden");
 }
 
 
@@ -96,6 +106,12 @@ function init() {
     centroids[i].onmouseover = showElement;
     centroids[i].onmouseout = hideElement;
     centroids[i].onmousedown = selectElement;
+  }
+  var tensors = document.getElementsByClassName("tensor");
+  for (var i = 0; i < tensors.length; i++) {
+    tensors[i].onmouseover = function(event) {document.getElementById(this.id).setAttribute("stroke", "red");};
+    tensors[i].onmouseout = function(event) {document.getElementById(this.id).setAttribute("stroke", "black");};
+    tensors[i].onmousedown = deleteTensor;
   }
 
   document.getElementById("segmentation").onmousedown = movePoint;
