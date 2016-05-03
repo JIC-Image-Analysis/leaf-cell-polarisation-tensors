@@ -252,7 +252,7 @@ class TensorManager(dict):
 
     def write_audit_log(self, fh):
         """Write out an audit log."""
-        for cmd in self.commands:
+        for cmd in self.audit_log:
             fh.write("{}\n".format(cmd.audit_log))
 
     def apply_json(self, line):
