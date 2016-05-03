@@ -20,6 +20,76 @@ function clearSelection(event) {
   }
 }
 
+function action_from_json(info) {
+  var tensor_id = "tensor-" + info["tensor_id"];
+  var marker_id = "marker-" + info["tensor_id"];
+  var centroid_id = "centroid-" + info["tensor_id"];
+
+  var tensor = document.getElementById(tensor_id);
+  var marker = document.getElementById(marker_id);
+  var centroid = document.getElementById(centroid_id);
+
+  if (info["action"] == "update") {
+    for (var key in info) {
+      var value = info[key];
+      if (key == "tensor_id" || key == "update") {
+        continue;
+      }
+      else {
+        if (key == "active") {
+          if (value) {
+            tensor.setAttribute("visibility", "visible");
+            marker.setAttribute("visibility", "visible");
+            centroid.setAttribute("visibility", "visible");
+          }
+          else {
+            tensor.setAttribute("visibility", "hidden");
+            marker.setAttribute("visibility", "hidden");
+            centroid.setAttribute("visibility", "hidden");
+          }
+        }
+        else {
+          var x = value[1];
+          var y = value[0];
+          if (key == "marker") {
+            // Update the tensor line.
+            tensor.setAttribute("x1", x);
+            tensor.setAttribute("y1", y);
+
+            // Update the marker circle.
+            marker.setAttribute("cx", x);
+            marker.setAttribute("cy", y);
+          }
+          if (key == "centroid") {
+            tensor.setAttribute("x2", x);
+            tensor.setAttribute("y2", y);
+
+            // Update the centroid circle.
+            centroid.setAttribute("cx", x);
+            centroid.setAttribute("cy", y);
+          }
+        }
+      }
+    }
+  }
+}
+
+function undo(event) {
+  // Ajax call.
+  var xhttp = new XMLHttpRequest();
+  var url = "undo"
+  xhttp.onreadystatechange = function() {
+    if (xhttp.readyState == 4 && xhttp.status == 200) {
+      if (!xhttp.responseText.startsWith("None")) {
+        var info = JSON.parse(xhttp.responseText);
+        action_from_json(info);
+      }
+    }
+  };
+  xhttp.open("POST", url, true);
+  xhttp.send()
+}
+
 function showElement() {
   document.getElementById(this.id).setAttribute("fill", "red");
 }
