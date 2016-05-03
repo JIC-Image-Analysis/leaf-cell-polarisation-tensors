@@ -90,6 +90,22 @@ function undo(event) {
   xhttp.send()
 }
 
+function redo(event) {
+  // Ajax call.
+  var xhttp = new XMLHttpRequest();
+  var url = "redo"
+  xhttp.onreadystatechange = function() {
+    if (xhttp.readyState == 4 && xhttp.status == 200) {
+      if (!xhttp.responseText.startsWith("None")) {
+        var info = JSON.parse(xhttp.responseText);
+        action_from_json(info);
+      }
+    }
+  };
+  xhttp.open("POST", url, true);
+  xhttp.send()
+}
+
 function showElement() {
   document.getElementById(this.id).setAttribute("fill", "red");
 }

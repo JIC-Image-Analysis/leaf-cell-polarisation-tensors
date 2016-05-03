@@ -52,6 +52,13 @@ def undo():
     if request.method == "POST":
         return "{}\n".format(app.tensor_manager.undo())
 
+
+@app.route("/redo", methods=["POST"])
+def redo():
+    if request.method == "POST":
+        return "{}\n".format(app.tensor_manager.redo())
+
+
 @app.route("/audit_log")
 def audit_log():
     return render_template("audit_log.html",
