@@ -1,5 +1,18 @@
 var selected = null;
 
+function toggleChannels() {
+  var wall_intensity = document.getElementById("cell_wall_intensity");
+  var marker_intensity = document.getElementById("marker_intensity");
+  if (wall_intensity.getAttribute("visibility") == "visible") {
+    wall_intensity.setAttribute("visibility", "hidden");
+    marker_intensity.setAttribute("visibility", "visible");
+  }
+  else {
+    wall_intensity.setAttribute("visibility", "visible");
+    marker_intensity.setAttribute("visibility", "hidden");
+  }
+}
+
 function toggleSegmentation() {
   var visibility = document.getElementById("segmentation").getAttribute("visibility");
   if (!visibility) {

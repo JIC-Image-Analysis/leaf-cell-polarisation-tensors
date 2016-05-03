@@ -8,12 +8,14 @@ from tensor import TensorManager
 
 from utils import HERE
 
+STATIC = os.path.join(HERE, "static")
+
 app = Flask(__name__)
 
 @app.route("/")
 def index():
     im_fname = "segmentation.png"
-    im_fpath = os.path.join(HERE, "static", im_fname)
+    im_fpath = os.path.join(STATIC, im_fname)
     im = PIL.Image.open(im_fpath)
     xdim, ydim = im.size
     tensors = [tensor_manager[i] for i in app.tensor_manager.identifiers]
@@ -21,7 +23,9 @@ def index():
                            xdim=xdim,
                            ydim=ydim,
                            tensors=tensors,
-                           raster_fname=url_for("static", filename=im_fname))
+                           cell_wall_fname=url_for("static", filename="wall_intensity.png"),
+                           marker_fname=url_for("static", filename="marker_intensity.png"),
+                           segmentation_fname=url_for("static", filename=im_fname))
 
 @app.route("/inactivate_tensor/<int:tensor_id>", methods=["POST"])
 def inactivate_tensor(tensor_id):
@@ -66,13 +70,31 @@ def audit_log():
 
 
 
+def make_transparent(im, alpha):
+    """Return rgba pil image."""
+    im = im.convert("RGBA")
+    pixdata = im.load()
+    for y in xrange(im.size[1]):
+        for x in xrange(im.size[0]):
+            rgba = list(pixdata[x, y])
+            rgba[-1] = alpha
+            pixdata[x, y] = tuple(rgba)
+    return im
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("raw_tensors", help="path to file")
+    parser.add_argument("segmentation", help="path to png")
     args = parser.parse_args()
 
     if not os.path.isfile(args.raw_tensors):
         parser.error("No such file {}".format(args.raw_tensors))
+
+    if not os.path.isfile(args.segmentation):
+        parser.error("No such file {}".format(args.segmentation))
+    im = PIL.Image.open(args.segmentation)
+    im = make_transparent(im, 120)
+    im.save(os.path.join(STATIC, "segmentation.png"))
 
     tensor_manager = TensorManager()
     with open(args.raw_tensors) as fh:
