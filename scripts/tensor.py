@@ -133,6 +133,12 @@ class TensorManager(dict):
         ids = self.keys()
         return sorted(ids)
 
+    @property
+    def audit_log(self):
+        """Return list of commands excluding undone ones."""
+        num_commands = len(self.commands) + self.command_offset
+        return [self.commands[i] for i in range(num_commands)]
+
     def run_command(self, cmd):
         """Add command to command list and run it."""
         # Clip future if running a new command.
@@ -354,13 +360,15 @@ def test_overall_api():
     assert (6 in tensor_manager) is True
     assert tensor_manager.identifiers == [1, 2, 5, 6]
 
-    # Test undo followed by new action.
+    # Test undo followed by new action and audit_log property.
     assert len(tensor_manager.commands) == 4
+    assert len(tensor_manager.audit_log) == 4
     tensor_manager.undo()
     assert (6 in tensor_manager) is False
     tensor_manager.undo()
     assert len(tensor_manager.commands) == 4
     assert tensor_manager.command_offset == -2
+    assert len(tensor_manager.audit_log) == 2
     assert tensor1.marker == [3, 5]
     assert tensor_manager[2].centroid == [2, 8]
     tensor_manager.update_centroid(2, (1, 1))
