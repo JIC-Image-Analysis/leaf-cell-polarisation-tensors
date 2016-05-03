@@ -14,6 +14,15 @@ STATIC = os.path.join(HERE, "static")
 
 app = Flask(__name__)
 
+AUDIT_LOG_FNAME = "audit.log"
+
+
+def write_audit_log():
+    """Write the audit log to disk."""
+    fpath = os.path.join(app.output_dir, AUDIT_LOG_FNAME)
+    with open(fpath, "w") as fh:
+        app.tensor_manager.write_audit_log(fh)
+
 
 @app.route("/")
 def index():
@@ -34,6 +43,7 @@ def index():
 def inactivate_tensor(tensor_id):
     if request.method == "POST":
         app.tensor_manager.inactivate_tensor(tensor_id)
+        write_audit_log()
         app.logger.debug("Inactivated tensor {:d}".format(tensor_id))
         return "Inactivated tensor {:d}\n".format(tensor_id)
 
@@ -42,6 +52,7 @@ def inactivate_tensor(tensor_id):
 def update_marker(tensor_id, y, x):
     if request.method == "POST":
         app.tensor_manager.update_marker(tensor_id, (y, x))
+        write_audit_log()
         app.logger.debug("Updated tensor {:d} marker to ({:.2f}, {:.2f})\n".format(tensor_id, y, x))
         return "Updated tensor {:d} marker to ({:.2f}, {:.2f})\n".format(tensor_id, y, x)
 
@@ -50,6 +61,7 @@ def update_marker(tensor_id, y, x):
 def update_centroid(tensor_id, y, x):
     if request.method == "POST":
         app.tensor_manager.update_centroid(tensor_id, (y, x))
+        write_audit_log()
         app.logger.debug("Updated tensor {:d} centroid to ({:.2f}, {:.2f})\n".format(tensor_id, y, x))
         return "Updated tensor {:d} centroid to ({:.2f}, {:.2f})\n".format(tensor_id, y, x)
 
@@ -57,13 +69,17 @@ def update_centroid(tensor_id, y, x):
 @app.route("/undo", methods=["POST"])
 def undo():
     if request.method == "POST":
-        return "{}\n".format(app.tensor_manager.undo())
+        info =  "{}\n".format(app.tensor_manager.undo())
+        write_audit_log()
+        return info
 
 
 @app.route("/redo", methods=["POST"])
 def redo():
     if request.method == "POST":
-        return "{}\n".format(app.tensor_manager.redo())
+        info =  "{}\n".format(app.tensor_manager.redo())
+        write_audit_log()
+        return info
 
 
 @app.route("/audit_log")
@@ -79,6 +95,7 @@ if __name__ == "__main__":
 
     if not os.path.isdir(args.input_dir):
         parser.error("No such directory {}".format(args.input_dir))
+    app.output_dir = args.input_dir
 
     for name in ["segmentation", "marker_intensity", "wall_intensity"]:
         fname = name + ".png"
@@ -89,8 +106,18 @@ if __name__ == "__main__":
         setattr(app, name, fname)
 
     tensor_manager = TensorManager()
-    with open(os.path.join(args.input_dir, "raw_tensors.txt")) as fh:
+
+    fpath = os.path.join(args.input_dir, "raw_tensors.txt")
+    if not os.path.isfile(fpath):
+        parser.error("No such file {}".format(fpath))
+    with open(fpath) as fh:
         tensor_manager.read_raw_tensors(fh)
+
+    fpath = os.path.join(args.input_dir, AUDIT_LOG_FNAME)
+    if os.path.isfile(fpath):
+        with open(fpath) as fh:
+            tensor_manager.apply_audit_log(fh)
+
     app.tensor_manager = tensor_manager
 
     app.run(debug=True)
