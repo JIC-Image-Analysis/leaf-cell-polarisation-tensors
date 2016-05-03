@@ -1,7 +1,9 @@
 """Module for creating annotated images."""
 
-from jicbioimage.illustrate import AnnotatedImage
+import PIL
+
 from jicbioimage.core.util.color import pretty_color
+from jicbioimage.illustrate import AnnotatedImage
 
 from utils import marker_cell_identifier
 
@@ -31,3 +33,15 @@ def annotate_tensors(ydim, xdim, tensor_manager, fh):
         color = pretty_color(tensor.cell_id)
         ann.draw_line(tensor.centroid, tensor.marker, color)
     fh.write(ann.png())
+
+
+def make_transparent(pil_im, alpha):
+    """Return rgba pil image."""
+    pil_im = pil_im.convert("RGBA")
+    pixdata = pil_im.load()
+    for y in xrange(pil_im.size[1]):
+        for x in xrange(pil_im.size[0]):
+            rgba = list(pixdata[x, y])
+            rgba[-1] = alpha
+            pixdata[x, y] = tuple(rgba)
+    return pil_im

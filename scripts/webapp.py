@@ -2,6 +2,8 @@
 
 import os.path
 import argparse
+import shutil
+
 import PIL
 from flask import Flask, render_template, url_for, request
 from tensor import TensorManager
@@ -12,10 +14,10 @@ STATIC = os.path.join(HERE, "static")
 
 app = Flask(__name__)
 
+
 @app.route("/")
 def index():
-    im_fname = "segmentation.png"
-    im_fpath = os.path.join(STATIC, im_fname)
+    im_fpath = os.path.join(STATIC, app.segmentation)
     im = PIL.Image.open(im_fpath)
     xdim, ydim = im.size
     tensors = [tensor_manager[i] for i in app.tensor_manager.identifiers]
@@ -23,9 +25,10 @@ def index():
                            xdim=xdim,
                            ydim=ydim,
                            tensors=tensors,
-                           cell_wall_fname=url_for("static", filename="wall_intensity.png"),
-                           marker_fname=url_for("static", filename="marker_intensity.png"),
-                           segmentation_fname=url_for("static", filename=im_fname))
+                           cell_wall_fname=url_for("static", filename=app.wall_intensity),
+                           marker_fname=url_for("static", filename=app.marker_intensity),
+                           segmentation_fname=url_for("static", filename=app.segmentation))
+
 
 @app.route("/inactivate_tensor/<int:tensor_id>", methods=["POST"])
 def inactivate_tensor(tensor_id):
@@ -69,35 +72,24 @@ def audit_log():
                            tensor_manager=app.tensor_manager)
 
 
-
-def make_transparent(im, alpha):
-    """Return rgba pil image."""
-    im = im.convert("RGBA")
-    pixdata = im.load()
-    for y in xrange(im.size[1]):
-        for x in xrange(im.size[0]):
-            rgba = list(pixdata[x, y])
-            rgba[-1] = alpha
-            pixdata[x, y] = tuple(rgba)
-    return im
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("raw_tensors", help="path to file")
-    parser.add_argument("segmentation", help="path to png")
+    parser.add_argument("input_dir", help="input directory")
     args = parser.parse_args()
 
-    if not os.path.isfile(args.raw_tensors):
-        parser.error("No such file {}".format(args.raw_tensors))
+    if not os.path.isdir(args.input_dir):
+        parser.error("No such directory {}".format(args.input_dir))
 
-    if not os.path.isfile(args.segmentation):
-        parser.error("No such file {}".format(args.segmentation))
-    im = PIL.Image.open(args.segmentation)
-    im = make_transparent(im, 120)
-    im.save(os.path.join(STATIC, "segmentation.png"))
+    for name in ["segmentation", "marker_intensity", "wall_intensity"]:
+        fname = name + ".png"
+        fpath = os.path.join(args.input_dir, fname)
+        if not os.path.isfile(fpath):
+            parser.error("No such file {}".format(fpath))
+        shutil.copy(fpath, STATIC)
+        setattr(app, name, fname)
 
     tensor_manager = TensorManager()
-    with open(args.raw_tensors) as fh:
+    with open(os.path.join(args.input_dir, "raw_tensors.txt")) as fh:
         tensor_manager.read_raw_tensors(fh)
     app.tensor_manager = tensor_manager
 

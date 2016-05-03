@@ -1,12 +1,14 @@
 """Analyse the polarity of cells using tensors."""
 
+import os
 import os.path
 import argparse
 
+import PIL
 import numpy as np
 import skimage.draw
 
-from jicbioimage.core.util.color import pretty_color
+from jicbioimage.core.util.array import false_color
 from jicbioimage.core.io import (
     AutoName,
     AutoWrite,
@@ -28,6 +30,7 @@ from annotate import (
     annotate_segmentation,
     annotate_markers,
     annotate_tensors,
+    make_transparent,
 )
 from svg import write_svg
 
@@ -52,39 +55,45 @@ def analyse(microscopy_collection):
     tensors = get_tensors(cells, markers)
 
     # Write out tensors to a text file.
-    with open("raw_tensors.txt", "w") as fh:
+    fpath = os.path.join(AutoName.directory, "raw_tensors.txt")
+    with open(fpath, "w") as fh:
         tensors.write_raw_tensors(fh)
 
     # Write out intensity images.
-    with open("wall_intensity.png", "wb") as fh:
+    fpath = os.path.join(AutoName.directory, "wall_intensity.png")
+    with open(fpath, "wb") as fh:
         fh.write(wall_intensity2D.png())
-    with open("marker_intensity.png", "wb") as fh:
+    fpath = os.path.join(AutoName.directory, "marker_intensity.png")
+    with open(fpath, "wb") as fh:
         fh.write(marker_intensity2D.png())
 
     # Write out annotated images.
-    with open("segmentation.png", "wb") as fh:
-        annotate_segmentation(cells, fh)
-    with open("markers.png", "wb") as fh:
-        annotate_markers(markers, cells, fh)
-    ydim, xdim = wall_mask2D.shape
-    with open("tensors.png", "wb") as fh:
-        annotate_tensors(ydim, xdim, tensors, fh)
+    colorful = false_color(cells)
+    pil_im = PIL.Image.fromarray(colorful.view(dtype=np.uint8))
+    pil_im = make_transparent(pil_im, 120)
+    fpath = os.path.join(AutoName.directory, "segmentation.png")
+    pil_im.save(fpath)
 
-    # Write out svg image.
-    with open("annotated.svg", "w") as fh:
-        write_svg(ydim, xdim, tensors, "segmentation.png", fh)
+    fpath = os.path.join(AutoName.directory, "markers.png")
+    with open(fpath, "wb") as fh:
+        annotate_markers(markers, cells, fh)
 
 
 def main():
     """Run the analysis on an individual image."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input_file", help="Path to input tiff file")
+    parser.add_argument("output_dir", help="Output directory")
     args = parser.parse_args()
     if not os.path.isfile(args.input_file):
         parser.error("No such file: {}".format(args.input_file))
 
+    if not os.path.isdir(args.output_dir):
+        os.mkdir(args.output_dir)
+
     microscopy_collection = get_microscopy_collection(args.input_file)
     AutoWrite.on = False
+    AutoName.directory = args.output_dir
     analyse(microscopy_collection)
 
 
