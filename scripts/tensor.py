@@ -104,6 +104,7 @@ class Command(object):
     def do(self):
         """Execute a command."""
         self.audit_log = self.do_method(*self.do_args)
+        return self.audit_log
 
     def undo(self):
         """Reverse the effect of a command."""
@@ -172,9 +173,9 @@ class TensorManager(dict):
             logging.debug("Nothing to redo...")
             return None
         cmd_index = self.command_offset
-        self.commands[cmd_index].do()
+        info = self.commands[cmd_index].do()
         self.command_offset += 1
-        return self.command_offset
+        return info
 
     def create_tensor(self, tensor_id, cell_id, centroid, marker,
                       creation_type="automated"):
