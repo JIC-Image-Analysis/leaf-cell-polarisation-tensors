@@ -13,6 +13,13 @@ function toggleSegmentation() {
   }
 }
 
+function clearSelection(event) {
+  if (selected) {
+    document.getElementById(selected).setAttribute("fill", "black");
+    selected = null;
+  }
+}
+
 function showElement() {
   document.getElementById(this.id).setAttribute("fill", "red");
 }
@@ -27,13 +34,6 @@ function selectElement(event) {
   clearSelection(event);
   document.getElementById(this.id).setAttribute("fill", "red");
   selected = this.id;
-}
-
-function clearSelection(event) {
-  if (selected) {
-    document.getElementById(selected).setAttribute("fill", "black");
-    selected = null;
-  }
 }
 
 function svgCursorPoint(event) {
