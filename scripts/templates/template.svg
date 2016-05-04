@@ -44,6 +44,11 @@
           y1="{{ tensor.marker[0] }}"
           x2="{{ tensor.centroid[1] }}"
           y2="{{ tensor.centroid[0] }}"
+          {% if tensor.active %}
+          visibility="visible"
+          {% else %}
+          visibility="hidden"
+          {% endif %}
           fill="none"
           stroke="black"
           stroke-width="2"
@@ -51,7 +56,11 @@
           marker-end="url(#Triangle)" />
     <circle id="marker-{{ tensor.tensor_id }}"
             class="marker"
-            draggable="true"
+            {% if tensor.active %}
+            visibility="visible"
+            {% else %}
+            visibility="hidden"
+            {% endif %}
             cx="{{ tensor.marker[1] }}"
             cy="{{ tensor.marker[0] }}"
             r="3"
@@ -59,7 +68,11 @@
             stroke="black" />
     <circle id="centroid-{{ tensor.tensor_id }}"
             class="centroid"
-            draggable="true"
+            {% if tensor.active %}
+            visibility="visible"
+            {% else %}
+            visibility="hidden"
+            {% endif %}
             cx="{{ tensor.centroid[1] }}"
             cy="{{ tensor.centroid[0] }}"
             r="3"
