@@ -1,5 +1,6 @@
 .coverage
 raw_tensors.txt
+audit.log
 
 *.png
 *.csv
