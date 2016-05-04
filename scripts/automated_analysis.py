@@ -14,6 +14,7 @@ from jicbioimage.core.io import (
     AutoWrite,
 )
 from jicbioimage.illustrate import AnnotatedImage
+from jicbioimage.transform import max_intensity_projection
 
 from utils import (
     get_microscopy_collection,
@@ -51,6 +52,10 @@ def analyse(microscopy_collection):
     cells = cell_segmentation(wall_intensity2D, wall_mask2D)
     markers = marker_segmentation(marker_intensity3D, wall_mask3D)
 
+    # Get marker in cell wall and project to 2D.
+    wall_marker = marker_intensity3D * wall_mask3D
+    wall_marker = max_intensity_projection(wall_marker)
+
     # Get tensors.
     tensors = get_tensors(cells, markers)
 
@@ -65,18 +70,18 @@ def analyse(microscopy_collection):
         fh.write(wall_intensity2D.png())
     fpath = os.path.join(AutoName.directory, "marker_intensity.png")
     with open(fpath, "wb") as fh:
-        fh.write(marker_intensity2D.png())
+        fh.write(wall_marker.png())
 
-    # Write out annotated images.
+    # Shrink the segments to make them clearer.
+    for i in cells.identifiers:
+        region = cells.region_by_identifier(i)
+        mask = region - region.inner.inner
+        cells[mask] = 0
     colorful = false_color(cells)
     pil_im = PIL.Image.fromarray(colorful.view(dtype=np.uint8))
-    pil_im = make_transparent(pil_im, 120)
+    pil_im = make_transparent(pil_im, 60)
     fpath = os.path.join(AutoName.directory, "segmentation.png")
     pil_im.save(fpath)
-
-    fpath = os.path.join(AutoName.directory, "markers.png")
-    with open(fpath, "wb") as fh:
-        annotate_markers(markers, cells, fh)
 
 
 def main():
