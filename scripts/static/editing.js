@@ -232,6 +232,8 @@ function init() {
     tensors[i].onmousedown = inactivateTensor;
   }
 
+  document.getElementById("cell_wall_intensity").onmousedown = movePoint;
+  document.getElementById("marker_intensity").onmousedown = movePoint;
   document.getElementById("segmentation").onmousedown = movePoint;
 
 }
