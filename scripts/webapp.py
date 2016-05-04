@@ -3,6 +3,7 @@
 import os.path
 import argparse
 import shutil
+import base64
 
 import PIL
 from flask import Flask, render_template, url_for, request
@@ -17,6 +18,11 @@ app = Flask(__name__)
 AUDIT_LOG_FNAME = "audit.log"
 
 
+def base64_from_fpath(fpath):
+    """Return base64 string from fpath."""
+    return base64.b64encode(open(fpath, "rb").read())
+
+
 def write_audit_log():
     """Write the audit log to disk."""
     fpath = os.path.join(app.output_dir, AUDIT_LOG_FNAME)
@@ -26,17 +32,14 @@ def write_audit_log():
 
 @app.route("/")
 def index():
-    im_fpath = os.path.join(STATIC, app.segmentation)
-    im = PIL.Image.open(im_fpath)
-    xdim, ydim = im.size
     tensors = [tensor_manager[i] for i in app.tensor_manager.identifiers]
     return render_template("template.html",
-                           xdim=xdim,
-                           ydim=ydim,
+                           xdim=app.xdim,
+                           ydim=app.ydim,
                            tensors=tensors,
-                           cell_wall_fname=url_for("static", filename=app.wall_intensity),
-                           marker_fname=url_for("static", filename=app.marker_intensity),
-                           segmentation_fname=url_for("static", filename=app.segmentation))
+                           cell_wall_image=app.wall_intensity,
+                           marker_image=app.marker_intensity,
+                           segmentation_image=app.segmentation)
 
 
 @app.route("/inactivate_tensor/<int:tensor_id>", methods=["POST"])
@@ -102,8 +105,13 @@ if __name__ == "__main__":
         fpath = os.path.join(args.input_dir, fname)
         if not os.path.isfile(fpath):
             parser.error("No such file {}".format(fpath))
-        shutil.copy(fpath, STATIC)
-        setattr(app, name, fname)
+        setattr(app, name, base64_from_fpath(fpath))
+
+    im_fpath = os.path.join(args.input_dir, fname)
+    im = PIL.Image.open(im_fpath)
+    xdim, ydim = im.size
+    app.xdim = xdim
+    app.ydim = ydim
 
     tensor_manager = TensorManager()
 

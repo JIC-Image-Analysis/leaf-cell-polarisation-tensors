@@ -20,15 +20,15 @@
 
   <image id="cell_wall_intensity" x="0" y="0" width="{{ xdim }}" height="{{ ydim }}"
    visibility="visible"
-   xlink:href="{{ cell_wall_fname }}" />
+   xlink:href="data:image/png;base64,{{ cell_wall_image }}" />
 
   <image id="marker_intensity" x="0" y="0" width="{{ xdim }}" height="{{ ydim }}"
    visibility="hidden"
-   xlink:href="{{ marker_fname }}" />
+   xlink:href="data:image/png;base64,{{ marker_image }}" />
 
   <image id="segmentation" x="0" y="0" width="{{ xdim }}" height="{{ ydim }}"
    visibility="hidden"
-   xlink:href="{{ segmentation_fname }}" />
+   xlink:href="data:image/png;base64,{{ segmentation_image }}" />
 
   <g id="tensors" class="intensityTheme">
   {% for tensor in tensors %}
