@@ -222,6 +222,25 @@ function downloadSVG() {
   delete link;
 }
 
+function downloadCSV() {
+  var xhttp = new XMLHttpRequest();
+  var url = "csv"
+  xhttp.onreadystatechange = function() {
+    if (xhttp.readyState == 4 && xhttp.status == 200) {
+      var csv = "data:text/csv;charset=utf-1," + xhttp.responseText;
+      var url = encodeURI(csv);
+      var link = document.createElement("a");
+      link.download = "tensor.csv";
+      link.href = url;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      delete link;
+    }
+  };
+  xhttp.open("POST", url, true);
+  xhttp.send()
+}
 
 function init() {
   var markers = document.getElementsByClassName("marker");

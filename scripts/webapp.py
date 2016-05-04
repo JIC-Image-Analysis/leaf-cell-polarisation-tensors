@@ -91,7 +91,7 @@ def audit_log():
                            tensor_manager=app.tensor_manager)
 
 
-@app.route("/csv")
+@app.route("/csv", methods=["GET", "POST"])
 def csv():
     return "\n".join(app.tensor_manager.csv)
 
