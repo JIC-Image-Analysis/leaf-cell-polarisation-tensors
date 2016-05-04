@@ -28,10 +28,17 @@ class Tensor(object):
         prefix = "<Tensor("
         suffix = ")>"
         info = []
-        for key in ["tensor_id", "cell_id", "centroid", "marker",
-                    "creation_type", "active"]:
+        for key in Tensor.keys():
             info.append("{}={}".format(key, self._data[key]))
         return prefix + ", ".join(info) + suffix
+
+    @staticmethod
+    def keys():
+        return ["tensor_id", "cell_id", "centroid", "marker", "creation_type", "active"]
+
+    @staticmethod
+    def extended_keys():
+        return ["tensor_id", "cell_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active"]
 
     @staticmethod
     def from_json(line):
@@ -44,6 +51,14 @@ class Tensor(object):
                         creation_type=d["creation_type"])
         tensor._data["active"] = d["active"]
         return tensor
+
+    @staticmethod
+    def csv_header():
+        return ",".join(Tensor.extended_keys())
+
+    @property
+    def csv_line(self):
+        return ",".join([str(getattr(self, k)) for k in Tensor.extended_keys()])
 
     @property
     def json(self):
@@ -65,9 +80,29 @@ class Tensor(object):
         return self._data["centroid"]
 
     @property
+    def centroid_row(self):
+        """Return the cell centroid row."""
+        return self._data["centroid"][0]
+
+    @property
+    def centroid_col(self):
+        """Return the cell centroid column."""
+        return self._data["centroid"][1]
+
+    @property
     def marker(self):
         """Return the membrane marker position."""
         return self._data["marker"]
+
+    @property
+    def marker_row(self):
+        """Return the membrane marker row."""
+        return self._data["marker"][0]
+
+    @property
+    def marker_col(self):
+        """Return the membrane marker column."""
+        return self._data["marker"][1]
 
     @property
     def creation_type(self):
@@ -139,6 +174,16 @@ class TensorManager(dict):
         """Return list of commands excluding undone ones."""
         num_commands = len(self.commands) + self.command_offset
         return [self.commands[i] for i in range(num_commands)]
+
+    @property
+    def csv(self):
+        """Return list of csv lines."""
+        lines = []
+        lines.append(Tensor.csv_header())
+        for tensor_id in self.identifiers:
+            tensor = self[tensor_id]
+            lines.append(tensor.csv_line)
+        return lines
 
     def run_command(self, cmd):
         """Add command to command list and run it."""
@@ -403,6 +448,11 @@ def test_overall_api():
     with open(audit_file) as fh:
         new_tensor_manager.apply_audit_log(fh)
     assert tensor_manager == new_tensor_manager
+
+    # Test csv functionality.
+    assert Tensor.extended_keys() == ["tensor_id", "cell_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active"]
+    assert Tensor.csv_header() == "tensor_id,cell_id,centroid_row,centroid_col,marker_row,marker_col,creation_type,active"
+    assert tensor1.csv_line == "1,5,1,10,3,5,automated,False"
 
     # Clean up.
     os.unlink(audit_file)

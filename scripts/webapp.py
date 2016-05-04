@@ -91,6 +91,11 @@ def audit_log():
                            tensor_manager=app.tensor_manager)
 
 
+@app.route("/csv")
+def csv():
+    return "\n".join(app.tensor_manager.csv)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input_dir", help="input directory")
