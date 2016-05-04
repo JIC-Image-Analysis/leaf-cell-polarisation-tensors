@@ -4,7 +4,32 @@
      width="{{ xdim }}" height="{{ ydim }}"
      viewbox="0 0 {{ xdim }} {{ ydim }}"
      xmlns="http://www.w3.org/2000/svg"
-     xmlns:xlink="http://www.w3.org/1999/xlink">
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     id="svg">
+
+  <style type="text/css">
+  line {
+    stroke-width: 2;
+  }
+  line:hover {
+    stroke: #8080f0;
+    stroke-width: 3;
+  }
+  circle:hover {
+    fill: #8080f0;
+  }
+  .selected {
+    fill: #8080f0;
+  }
+  .intensityTheme {
+    stroke: #F08080;
+    fill: #F08080;
+  }
+  .segmentationTheme {
+    stroke: black;
+    fill: black;
+  }
+  </style>
 
   <defs>
     <marker id="Triangle"

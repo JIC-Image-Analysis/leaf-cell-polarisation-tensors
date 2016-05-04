@@ -206,6 +206,22 @@ function inactivateTensor(event) {
   xhttp.send()
 }
 
+function downloadSVG() {
+  var svg = document.getElementById("svg");
+  var serializer = new XMLSerializer();
+  var source = serializer.serializeToString(svg);
+  source = '<?xml version="1.0"?>\n' + source;
+  var url = "data:image/svg+xml;charset=utf-1," + encodeURIComponent(source);
+
+  var link = document.createElement("a");
+  link.download = "tensor.svg";
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  delete link;
+}
+
 
 function init() {
   var markers = document.getElementsByClassName("marker");
@@ -224,5 +240,4 @@ function init() {
   document.getElementById("cell_wall_intensity").onmousedown = movePoint;
   document.getElementById("marker_intensity").onmousedown = movePoint;
   document.getElementById("segmentation").onmousedown = movePoint;
-
 }
