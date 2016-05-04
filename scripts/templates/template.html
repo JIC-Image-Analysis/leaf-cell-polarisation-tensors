@@ -7,6 +7,29 @@
 <script src="{{ url_for('static', filename='editing.js') }}"></script>
 
 </head>
+<style type="text/css">
+line {
+  stroke-width: 2;
+}
+line:hover {
+  stroke: #8080f0;
+  stroke-width: 3;
+}
+circle:hover {
+  fill: #8080f0;
+}
+.selected {
+  fill: #8080f0;
+}
+.intensityTheme {
+  stroke: #F08080;
+  fill: #F08080;
+}
+.segmentationTheme {
+  stroke: black;
+  fill: black;
+}
+</style>
 <body>
   <h1>Tensor editor</h1>
 

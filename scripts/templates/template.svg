@@ -8,20 +8,13 @@
 
   <defs>
     <marker id="Triangle"
+            class="intensityTheme"
             viewBox="0 0 10 10"
             refX="1" refY="5"
             markerWidth="6"
             markerHeight="6"
             orient="auto">
         <path d="M 0 0 L 10 5 L 0 10 z" />
-    </marker>
-    <marker id="Circle"
-            viewBox="0 0 10 10"
-            refX="5" refY="5"
-            markerWidth="6"
-            markerHeight="6"
-            orient="auto">
-        <circle cx="5" cy="5" r="3" />
     </marker>
   </defs>
 
@@ -37,6 +30,7 @@
    visibility="hidden"
    xlink:href="{{ segmentation_fname }}" />
 
+  <g id="tensors" class="intensityTheme">
   {% for tensor in tensors %}
     <line id="tensor-{{ tensor.tensor_id }}"
           class="tensor"
@@ -49,10 +43,6 @@
           {% else %}
           visibility="hidden"
           {% endif %}
-          fill="none"
-          stroke="black"
-          stroke-width="2"
-          marker-start="url(#Circle)"
           marker-end="url(#Triangle)" />
     <circle id="marker-{{ tensor.tensor_id }}"
             class="marker"
@@ -63,9 +53,7 @@
             {% endif %}
             cx="{{ tensor.marker[1] }}"
             cy="{{ tensor.marker[0] }}"
-            r="3"
-            fill="black"
-            stroke="black" />
+            r="3" />
     <circle id="centroid-{{ tensor.tensor_id }}"
             class="centroid"
             {% if tensor.active %}
@@ -75,10 +63,9 @@
             {% endif %}
             cx="{{ tensor.centroid[1] }}"
             cy="{{ tensor.centroid[0] }}"
-            r="3"
-            fill="black"
-            stroke="black" />
+            r="3" />
 
   {% endfor %}
+  </g>
 
 </svg>

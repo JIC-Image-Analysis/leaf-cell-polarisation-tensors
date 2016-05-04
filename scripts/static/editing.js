@@ -15,20 +15,25 @@ function toggleChannels() {
 
 function toggleSegmentation() {
   var visibility = document.getElementById("segmentation").getAttribute("visibility");
-  if (!visibility) {
-    document.getElementById("segmentation").setAttribute("visibility", "hidden");
-  }
-  else if (visibility == "hidden") {
+  if (visibility == "hidden") {
     document.getElementById("segmentation").setAttribute("visibility", "visible");
+    document.getElementById("Triangle").classList.remove("intensityTheme");
+    document.getElementById("tensors").classList.remove("intensityTheme");
+    document.getElementById("Triangle").classList.add("segmentationTheme");
+    document.getElementById("tensors").classList.add("segmentationTheme");
   }
   else {
     document.getElementById("segmentation").setAttribute("visibility", "hidden");
+    document.getElementById("Triangle").classList.remove("segmentationTheme");
+    document.getElementById("tensors").classList.remove("segmentationTheme");
+    document.getElementById("Triangle").classList.add("intensityTheme");
+    document.getElementById("tensors").classList.add("intensityTheme");
   }
 }
 
 function clearSelection(event) {
   if (selected) {
-    document.getElementById(selected).setAttribute("fill", "black");
+    document.getElementById(selected).classList.remove("selected");
     selected = null;
   }
 }
@@ -119,19 +124,9 @@ function redo(event) {
   xhttp.send()
 }
 
-function showElement() {
-  document.getElementById(this.id).setAttribute("fill", "red");
-}
-
-function hideElement() {
-  if (selected != this.id) {
-    document.getElementById(this.id).setAttribute("fill", "black");
-  }
-}
-
 function selectElement(event) {
   clearSelection(event);
-  document.getElementById(this.id).setAttribute("fill", "red");
+  document.getElementById(this.id).classList.add("selected");
   selected = this.id;
 }
 
@@ -215,20 +210,14 @@ function inactivateTensor(event) {
 function init() {
   var markers = document.getElementsByClassName("marker");
   for (var i = 0; i < markers.length; i++) {
-    markers[i].onmouseover = showElement;
-    markers[i].onmouseout = hideElement;
     markers[i].onmousedown = selectElement;
   }
   var centroids = document.getElementsByClassName("centroid");
   for (var i = 0; i < centroids.length; i++) {
-    centroids[i].onmouseover = showElement;
-    centroids[i].onmouseout = hideElement;
     centroids[i].onmousedown = selectElement;
   }
   var tensors = document.getElementsByClassName("tensor");
   for (var i = 0; i < tensors.length; i++) {
-    tensors[i].onmouseover = function(event) {document.getElementById(this.id).setAttribute("stroke", "red");};
-    tensors[i].onmouseout = function(event) {document.getElementById(this.id).setAttribute("stroke", "black");};
     tensors[i].onmousedown = inactivateTensor;
   }
 
