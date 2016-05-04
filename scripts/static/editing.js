@@ -206,6 +206,17 @@ function inactivateTensor(event) {
   xhttp.send()
 }
 
+function downloadEncodedURL(url, name) {
+  var link = document.createElement("a");
+  link.download = name;
+  link.href = url;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  delete link;
+}
+
+
 function downloadSVG() {
   var svg = document.getElementById("svg");
   var serializer = new XMLSerializer();
@@ -213,13 +224,7 @@ function downloadSVG() {
   source = '<?xml version="1.0"?>\n' + source;
   var url = "data:image/svg+xml;charset=utf-1," + encodeURIComponent(source);
 
-  var link = document.createElement("a");
-  link.download = "tensor.svg";
-  link.href = url;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  delete link;
+  downloadEncodedURL(url, "tensor.svg");
 }
 
 function downloadCSV() {
@@ -229,13 +234,7 @@ function downloadCSV() {
     if (xhttp.readyState == 4 && xhttp.status == 200) {
       var csv = "data:text/csv;charset=utf-1," + xhttp.responseText;
       var url = encodeURI(csv);
-      var link = document.createElement("a");
-      link.download = "tensor.csv";
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      delete link;
+      downloadEncodedURL(url, "tensor.csv");
     }
   };
   xhttp.open("POST", url, true);
