@@ -1,5 +1,52 @@
 # README
 
+## Prerequisites
+
+This image analysis project has been setup to take advantage of a technology
+known as Docker.
+
+This means that you will need to:
+
+1. Download and install the [Docker Toolbox](https://www.docker.com/products/docker-toolbox)
+2. Build the [Scicomp Docker](https://github.com/JIC-CSB/scicomp_docker) images.
+3. Build the local docker image:
+
 ```
-$ python scripts/automated_analysis.py data/raw/B1-26_L1_HS_12min_7DAS_image_2DAHS_zm1_z1.5_03_section1.tif
+$ cd docker
+$ bash build_docker_images
+$ cd ../
 ```
+
+## Automated tensor analysis
+
+1. Put your image file, e.g. ``genotype1.tif`` into the ``data`` directory.
+2. Start a docker session in the analysis container
+
+```
+$ bash run_analysis_container.sh
+[root@25278c5a93ec /]#
+```
+
+3. Run the automated analysis script on the image
+
+```
+[root@25278c5a93ec /]# python /scripts/automated_analysis.py /data/genotype1.tif /output/genotype1
+```
+
+
+## Editing tensors
+
+1. Start a docker session in the webapp continer
+
+```
+$ bash run_webapp_container.sh
+[root@125b9dd8d3df /]#
+```
+
+2. Start the webapp
+
+```
+[root@125b9dd8d3df /]# python /scripts/webapp.py /output/genotype1/
+```
+
+3. Point a web browser at http://192.168.99.100/ and start editing
