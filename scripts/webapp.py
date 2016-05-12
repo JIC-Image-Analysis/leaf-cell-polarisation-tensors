@@ -133,4 +133,4 @@ if __name__ == "__main__":
 
     app.tensor_manager = tensor_manager
 
-    app.run(debug=True)
+    app.run("0.0.0.0")
