@@ -1,0 +1,5 @@
+jicbioimage.core==0.11.0
+jicbioimage.illustrate==0.6.0
+jicbioimage.segment==0.4.0
+jicbioimage.transform==0.5.1
+scikit-image==0.11.3

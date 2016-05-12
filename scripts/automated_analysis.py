@@ -8,7 +8,7 @@ import PIL
 import numpy as np
 import skimage.draw
 
-from jicbioimage.core.util.array import false_color
+from jicbioimage.core.util.array import pretty_color_array
 from jicbioimage.core.io import (
     AutoName,
     AutoWrite,
@@ -33,7 +33,6 @@ from annotate import (
     annotate_tensors,
     make_transparent,
 )
-from svg import write_svg
 
 AutoName.prefix_format = "{:03d}_"
 
@@ -77,7 +76,7 @@ def analyse(microscopy_collection):
         region = cells.region_by_identifier(i)
         mask = region - region.inner.inner
         cells[mask] = 0
-    colorful = false_color(cells)
+    colorful = pretty_color_array(cells)
     pil_im = PIL.Image.fromarray(colorful.view(dtype=np.uint8))
     pil_im = make_transparent(pil_im, 60)
     fpath = os.path.join(AutoName.directory, "segmentation.png")

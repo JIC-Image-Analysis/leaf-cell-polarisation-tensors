@@ -2,7 +2,7 @@
 
 import PIL
 
-from jicbioimage.core.util.color import pretty_color
+from jicbioimage.core.util.color import pretty_color_from_identifier
 from jicbioimage.illustrate import AnnotatedImage
 
 from utils import marker_cell_identifier
@@ -20,7 +20,7 @@ def annotate_markers(markers, cells, fh):
     for i in markers.identifiers:
         m_region = markers.region_by_identifier(i)
         cell_id = marker_cell_identifier(m_region, cells)
-        color = pretty_color(cell_id)
+        color = pretty_color_from_identifier(cell_id)
         ann.mask_region(m_region, color)
     fh.write(ann.png())
 
@@ -30,7 +30,7 @@ def annotate_tensors(ydim, xdim, tensor_manager, fh):
     ann = AnnotatedImage.blank_canvas(width=xdim, height=ydim)
     for i in tensor_manager.identifiers:
         tensor = tensor_manager[i]
-        color = pretty_color(tensor.cell_id)
+        color = pretty_color_from_identifier(tensor.cell_id)
         ann.draw_line(tensor.centroid, tensor.marker, color)
     fh.write(ann.png())
 
