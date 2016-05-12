@@ -1,11 +1,12 @@
 .coverage
 raw_tensors.txt
 audit.log
-docker/jicbioimage/analysis_requirements.txt
+docker/jicbioimage/requirements.txt
 
 *.png
 *.csv
 *.pyc
+*.swp
 
 env/*
 data/*
