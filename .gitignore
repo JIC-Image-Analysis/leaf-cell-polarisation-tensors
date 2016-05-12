@@ -1,6 +1,7 @@
 .coverage
 raw_tensors.txt
 audit.log
+docker/jicbioimage/analysis_requirements.txt
 
 *.png
 *.csv
