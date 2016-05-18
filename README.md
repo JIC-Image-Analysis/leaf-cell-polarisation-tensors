@@ -1,6 +1,10 @@
 # README
 
-## Prerequisites
+## Installation
+
+Download the source code from GitHub:
+
+https://github.com/JIC-Image-Analysis/leaf-cell-polarisation-tensors
 
 This image analysis project has been setup to take advantage of a technology
 known as Docker.
@@ -8,12 +12,11 @@ known as Docker.
 This means that you will need to:
 
 1. Download and install the [Docker Toolbox](https://www.docker.com/products/docker-toolbox)
-2. Build the [Scicomp Docker](https://github.com/JIC-CSB/scicomp_docker) images.
-3. Build the local docker image:
+2. Build the local docker image:
 
 ```
 $ cd docker
-$ bash build_docker_images
+$ bash build_docker_images.sh
 $ cd ../
 ```
 
