@@ -1,7 +1,7 @@
 .coverage
 raw_tensors.txt
 audit.log
-docker/jicbioimage/requirements.txt
+docker/leaf-cell-polarisation-tensor/requirements.txt
 
 *.png
 *.csv
