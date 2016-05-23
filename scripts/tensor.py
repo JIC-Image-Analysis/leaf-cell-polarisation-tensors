@@ -327,6 +327,9 @@ def get_tensors(cells, markers):
         m_region = markers.region_by_identifier(marker_id)
         marker_position = m_region.convex_hull.centroid
         cell_id = marker_cell_identifier(m_region, cells)
+        if cell_id == 0:
+            logging.debug("Skipping tensor from cell_id 0")
+            continue
         c_region = cells.region_by_identifier(cell_id)
         centroid = c_region.centroid
         tensor_manager.create_tensor(tensor_id, cell_id,
