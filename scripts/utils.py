@@ -15,6 +15,8 @@ from jicbioimage.core.io import (
 from jicbioimage.transform import (
     remove_small_objects,
     max_intensity_projection,
+    invert,
+    remove_small_objects,
 )
 
 HERE = os.path.dirname(os.path.realpath(__file__))
@@ -47,6 +49,30 @@ def identity(image):
 def threshold_abs(image, threshold):
     """Return image thresholded using the mean."""
     return image > threshold
+
+
+@transformation
+def mask_from_large_objects(image, max_size):
+    tmp_autowrite = AutoWrite.on
+    AutoWrite.on = False
+    mask = remove_small_objects(image, min_size=max_size)
+    mask = invert(mask)
+    AutoWrite.on = tmp_autowrite
+    return mask
+
+
+def test_remove_large_objects():
+    ar = np.array([[0, 0, 1, 1],
+                   [0, 0, 1, 1],
+                   [0, 0, 0, 0],
+                   [1, 0, 0, 0]], dtype=bool)
+    exp = np.array([[0, 0, 0, 0],
+                    [0, 0, 0, 0],
+                    [0, 0, 0, 0],
+                    [1, 0, 0, 0]], dtype=bool)
+    out = remove_large_objects(ar, max_size=3)
+    print(out)
+    assert np.array_equal(out, exp)
 
 
 def segment_zslice(image):
