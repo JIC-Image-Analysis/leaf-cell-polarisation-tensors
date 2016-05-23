@@ -4,6 +4,7 @@ import os
 import os.path
 import argparse
 import logging
+import warnings
 
 import PIL
 import numpy as np
@@ -34,6 +35,11 @@ from annotate import (
     annotate_tensors,
     make_transparent,
 )
+
+# Suppress spurious scikit-image warnings.
+warnings.filterwarnings("ignore", module="skimage.morphology.misc")
+
+
 
 AutoName.prefix_format = "{:03d}_"
 
