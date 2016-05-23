@@ -11,17 +11,18 @@ from jicbioimage.segment import (
     watershed_with_seeds,
 )
 
-from utils import threshold_abs, mask_from_large_objects
+from utils import threshold_abs, remove_large_segments
 
 
 def cell_segmentation(wall_intensity2D, wall_mask2D):
     """Return image segmented into cells."""
     seeds = dilate_binary(wall_mask2D)
     seeds = invert(seeds)
-    mask = mask_from_large_objects(seeds, max_size=5000)
     seeds = remove_small_objects(seeds, min_size=10)
     seeds = connected_components(seeds, background=0)
-    return watershed_with_seeds(-wall_intensity2D, mask=mask, seeds=seeds)
+    segmentation = watershed_with_seeds(-wall_intensity2D, seeds=seeds)
+    segmentation = remove_large_segments(segmentation, 5000)
+    return segmentation
 
 
 def marker_segmentation(marker_intensity3D, wall_mask3D, threshold):

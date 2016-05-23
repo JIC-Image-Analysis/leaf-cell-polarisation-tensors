@@ -75,6 +75,15 @@ def test_remove_large_objects():
     assert np.array_equal(out, exp)
 
 
+@transformation
+def remove_large_segments(segmentation, max_size):
+    for i in segmentation.identifiers:
+        region = segmentation.region_by_identifier(i)
+        if region.area > max_size:
+            segmentation[region] = 0
+    return segmentation
+
+
 def segment_zslice(image):
     """Segment a zslice."""
     tmp_autowrite = AutoWrite.on
