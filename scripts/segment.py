@@ -23,10 +23,10 @@ def cell_segmentation(wall_intensity2D, wall_mask2D):
     return watershed_with_seeds(-wall_intensity2D, seeds=seeds)
 
 
-def marker_segmentation(marker_intensity3D, wall_mask3D):
+def marker_segmentation(marker_intensity3D, wall_mask3D, threshold):
     """Return fluorescent marker segmentation."""
     marker_intensity3D = marker_intensity3D * wall_mask3D
     markers2D = max_intensity_projection(marker_intensity3D)
-    markers2D = threshold_abs(markers2D, 45)
+    markers2D = threshold_abs(markers2D, threshold)
     markers2D = remove_small_objects(markers2D, min_size=50)
     return connected_components(markers2D, background=0)

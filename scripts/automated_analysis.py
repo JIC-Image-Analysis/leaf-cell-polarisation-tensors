@@ -37,7 +37,7 @@ from annotate import (
 AutoName.prefix_format = "{:03d}_"
 
 
-def analyse(microscopy_collection):
+def analyse(microscopy_collection, threshold):
     """Do the analysis."""
     # Prepare the input data for the segmentations.
     (wall_intensity2D,
@@ -49,7 +49,7 @@ def analyse(microscopy_collection):
 
     # Perform the segmentation.
     cells = cell_segmentation(wall_intensity2D, wall_mask2D)
-    markers = marker_segmentation(marker_intensity3D, wall_mask3D)
+    markers = marker_segmentation(marker_intensity3D, wall_mask3D, threshold)
 
     # Get marker in cell wall and project to 2D.
     wall_marker = marker_intensity3D * wall_mask3D
@@ -88,6 +88,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input_file", help="Path to input tiff file")
     parser.add_argument("output_dir", help="Output directory")
+    parser.add_argument("-t", "--threshold",
+                        default=45, type=int,
+                        help="Marker threshold")
     args = parser.parse_args()
     if not os.path.isfile(args.input_file):
         parser.error("No such file: {}".format(args.input_file))
@@ -98,7 +101,7 @@ def main():
     microscopy_collection = get_microscopy_collection(args.input_file)
     AutoWrite.on = False
     AutoName.directory = args.output_dir
-    analyse(microscopy_collection)
+    analyse(microscopy_collection, threshold=args.threshold)
 
 
 if __name__ == "__main__":
