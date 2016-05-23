@@ -3,6 +3,7 @@
 import os
 import os.path
 import argparse
+import logging
 
 import PIL
 import numpy as np
@@ -91,6 +92,8 @@ def main():
     parser.add_argument("-t", "--threshold",
                         default=45, type=int,
                         help="Marker threshold")
+    parser.add_argument("--debug",
+                        default=False, action="store_true")
     args = parser.parse_args()
     if not os.path.isfile(args.input_file):
         parser.error("No such file: {}".format(args.input_file))
@@ -99,8 +102,14 @@ def main():
         os.mkdir(args.output_dir)
 
     microscopy_collection = get_microscopy_collection(args.input_file)
-    AutoWrite.on = False
+
     AutoName.directory = args.output_dir
+    AutoWrite.on = args.debug
+    logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
+
+    logging.info("Input file: {}".format(args.input_file))
+    logging.info("Marker threshold: {}".format(args.threshold))
+
     analyse(microscopy_collection, threshold=args.threshold)
 
 

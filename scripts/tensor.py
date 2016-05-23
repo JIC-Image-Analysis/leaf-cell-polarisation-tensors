@@ -5,7 +5,6 @@ import os.path
 import copy
 import json
 import logging
-logging.basicConfig(level=logging.DEBUG)
 
 from utils import marker_cell_identifier
 
@@ -122,7 +121,7 @@ class Tensor(object):
         self._data[name] = value
         d = dict(tensor_id=self.tensor_id, action="update")
         d[name] = value
-        logging.info(json.dumps(d))
+        logging.debug(json.dumps(d))
         return json.dumps(d)
 
 
@@ -232,14 +231,14 @@ class TensorManager(dict):
                                  marker, creation_type)
         d = copy.deepcopy(self[tensor_id]._data)
         d["action"] = "create"
-        logging.info(json.dumps(d))
+        logging.debug(json.dumps(d))
         return json.dumps(d)
 
     def _delete_tensor(self, tensor_id):
         """Never call this directly."""
         d = dict(tensor_id=tensor_id, action="delete")
         del self[tensor_id]
-        logging.info(json.dumps(d))
+        logging.debug(json.dumps(d))
 
     def add_tensor(self, cell_id, centroid, marker):
         """Add a tensor manually.
@@ -459,4 +458,5 @@ def test_overall_api():
     os.unlink(raw_tensor_file)
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     test_overall_api()
