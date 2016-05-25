@@ -14,14 +14,14 @@ from jicbioimage.segment import (
 from utils import threshold_abs, remove_large_segments
 
 
-def cell_segmentation(wall_intensity2D, wall_mask2D):
+def cell_segmentation(wall_intensity2D, wall_mask2D, max_cell_size):
     """Return image segmented into cells."""
     seeds = dilate_binary(wall_mask2D)
     seeds = invert(seeds)
     seeds = remove_small_objects(seeds, min_size=10)
     seeds = connected_components(seeds, background=0)
     segmentation = watershed_with_seeds(-wall_intensity2D, seeds=seeds)
-    segmentation = remove_large_segments(segmentation, 5000)
+    segmentation = remove_large_segments(segmentation, max_cell_size)
     return segmentation
 
 

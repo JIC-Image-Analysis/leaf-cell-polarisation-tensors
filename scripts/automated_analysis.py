@@ -44,18 +44,18 @@ warnings.filterwarnings("ignore", module="skimage.morphology.misc")
 AutoName.prefix_format = "{:03d}_"
 
 
-def analyse(microscopy_collection, threshold):
+def analyse(microscopy_collection, wall_channel, marker_channel, threshold, max_cell_size):
     """Do the analysis."""
     # Prepare the input data for the segmentations.
     (wall_intensity2D,
      wall_intensity3D,
      wall_mask2D,
-     wall_mask3D) = get_wall_intensity_and_mask_images(microscopy_collection)
+     wall_mask3D) = get_wall_intensity_and_mask_images(microscopy_collection, wall_channel)
     (marker_intensity2D,
-     marker_intensity3D) = get_marker_intensity_images(microscopy_collection)
+     marker_intensity3D) = get_marker_intensity_images(microscopy_collection, marker_channel)
 
     # Perform the segmentation.
-    cells = cell_segmentation(wall_intensity2D, wall_mask2D)
+    cells = cell_segmentation(wall_intensity2D, wall_mask2D, max_cell_size)
     markers = marker_segmentation(marker_intensity3D, wall_mask3D, threshold)
 
     # Get marker in cell wall and project to 2D.
@@ -95,9 +95,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input_file", help="Path to input tiff file")
     parser.add_argument("output_dir", help="Output directory")
+    parser.add_argument("-w", "--wall-channel",
+                        default=1, type=int,
+                        help="Wall channel (zero indexed)")
+    parser.add_argument("-m", "--marker-channel",
+                        default=0, type=int,
+                        help="Marker channel (zero indexed)")
     parser.add_argument("-t", "--threshold",
                         default=45, type=int,
                         help="Marker threshold")
+    parser.add_argument("-s", "--max-cell-size",
+                        default=10000, type=int,
+                        help="Maximum cell size (pixels)")
     parser.add_argument("--debug",
                         default=False, action="store_true")
     args = parser.parse_args()
@@ -107,16 +116,23 @@ def main():
     if not os.path.isdir(args.output_dir):
         os.mkdir(args.output_dir)
 
-    microscopy_collection = get_microscopy_collection(args.input_file)
 
     AutoName.directory = args.output_dir
     AutoWrite.on = args.debug
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO)
 
     logging.info("Input file: {}".format(args.input_file))
+    logging.info("Wall channel: {}".format(args.wall_channel))
+    logging.info("Marker channel: {}".format(args.marker_channel))
     logging.info("Marker threshold: {}".format(args.threshold))
+    logging.info("Max cell size: {}".format(args.max_cell_size))
 
-    analyse(microscopy_collection, threshold=args.threshold)
+    microscopy_collection = get_microscopy_collection(args.input_file)
+    analyse(microscopy_collection,
+            wall_channel=args.wall_channel,
+            marker_channel=args.marker_channel,
+            threshold=args.threshold,
+            max_cell_size=args.max_cell_size)
 
 
 if __name__ == "__main__":
