@@ -108,8 +108,9 @@ def analyse(microscopy_collection, wall_channel, marker_channel,
     with open(fpath, "wb") as fh:
         fh.write(cell_wall_projection.png())
     fpath = os.path.join(AutoName.directory, "marker_intensity.png")
+    marker_im = marker_in_wall(marker_projection, wall)
     with open(fpath, "wb") as fh:
-        fh.write(marker_projection.png())
+        fh.write(marker_im.png())
 
     # Shrink the segments to make them clearer.
     for i in cells.identifiers:
