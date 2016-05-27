@@ -38,7 +38,7 @@ def generate_surface_from_stack(stack, sd=(10, 10, 10), surface_blur_sd=5):
 
 def projection_from_stack_and_surface(stack, surface, z_below=1, z_above=1):
     """Return a 2D projection of a 3D stack. The projection is obtained by
-    using the elements of the 2D array surface as the Z index for each 
+    using the elements of the 2D array surface as the Z index for each
     point in the plane."""
 
     projection = np.zeros(surface.shape, dtype=np.uint8)
@@ -60,43 +60,54 @@ def save_image(filename, image):
     with open(filename, 'wb') as f:
         f.write(image.png())
 
-def generate_projections_from_microscope_image(input_file, cell_wall_file, 
-                                                protein_file):
+def generate_projections_from_microscope_image(input_file,
+                                               cell_wall_file,
+                                               marker_file,
+                                               wall_channel,
+                                               marker_channel):
     """Generate and save projections generated from a stack loaded from the
     input microscopy file. These use a surface extracted from channel 2
     (assumed to be the cell wall channel) which is then used to determine
-    projections of that channel, as well as the protein channel (assumed to
+    projections of that channel, as well as the marker channel (assumed to
     be channel 0)."""
 
-    cell_wall_channel = 2
-    protein_channel = 0
+    cell_wall_channel = wall_channel
+    marker_channel = marker_channel
     collection = collection_from_filename(input_file)
 
     cell_wall_stack = collection.zstack_array(s=0, c=cell_wall_channel)
-    protein_stack = collection.zstack_array(s=0, c=protein_channel)
+    marker_stack = collection.zstack_array(s=0, c=marker_channel)
 
     surface = generate_surface_from_stack(cell_wall_stack)
 
-    cell_wall_projection = projection_from_stack_and_surface(cell_wall_stack, 
+    cell_wall_projection = projection_from_stack_and_surface(cell_wall_stack,
                                                              surface, 5, 5)
-    protein_projection = projection_from_stack_and_surface(protein_stack,
-                                                            surface, 5, 5)
+    marker_projection = projection_from_stack_and_surface(marker_stack,
+                                                          surface, 5, 5)
 
 
     save_image(cell_wall_file, cell_wall_projection)
-    save_image(protein_file, protein_projection)
+    save_image(marker_file, marker_projection)
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input_file', help="Input microscope file.")
     parser.add_argument('cell_wall_filename', help="Filename to use for output cell wall projection image.")
-    parser.add_argument('protein_filename', help="Filename ot use for output protein channel projection image.")
+    parser.add_argument('marker_filename', help="Filename to use for output marker channel projection image.")
+    parser.add_argument("-w", "--wall-channel",
+                        default=1, type=int,
+                        help="Wall channel (zero indexed)")
+    parser.add_argument("-m", "--marker-channel",
+                        default=0, type=int,
+                        help="Marker channel (zero indexed)")
 
     args = parser.parse_args()
 
-    generate_projections_from_microscope_image(args.input_file, 
+    generate_projections_from_microscope_image(args.input_file,
                                                args.cell_wall_filename,
-                                               args.protein_filename)
+                                               args.marker_filename,
+                                               args.wall_channel,
+                                               args.marker_channel)
 
 if __name__ == "__main__":
     main()
