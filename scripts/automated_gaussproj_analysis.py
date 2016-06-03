@@ -87,9 +87,9 @@ def analyse(microscopy_collection, wall_channel, marker_channel,
     marker_stack = microscopy_collection.zstack_array(c=marker_channel)
     surface = generate_surface_from_stack(cell_wall_stack)
     cell_wall_projection = projection_from_stack_and_surface(cell_wall_stack,
-                                                             surface, 5, 5)
+                                                             surface, 1, 9)
     marker_projection = projection_from_stack_and_surface(marker_stack,
-                                                          surface, 5, 5)
+                                                          surface, 1, 9)
 
     # Perform the segmentation.
     cells, wall = segment_cells(cell_wall_projection, max_cell_size)
