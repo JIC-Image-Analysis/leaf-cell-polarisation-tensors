@@ -6,17 +6,12 @@ import scipy.ndimage as nd
 
 from jicbioimage.core.image import Image
 
-from jicbioimage.core.io import FileBackend
-from jicbioimage.core.io import DataManager
+from utils import get_microscopy_collection
 
 HERE = os.path.dirname(__file__)
 UNPACK = os.path.join(HERE, '..', 'data', 'unpack')
 OUTPUT = os.path.join(HERE, '..', 'output')
 
-def collection_from_filename(stack_filename):
-    file_backend = FileBackend(UNPACK)
-    data_manager = DataManager(file_backend)
-    microscopy_collection = data_manager.load(stack_filename)
 
     return microscopy_collection
 
@@ -73,7 +68,7 @@ def generate_projections_from_microscope_image(input_file,
 
     cell_wall_channel = wall_channel
     marker_channel = marker_channel
-    collection = collection_from_filename(input_file)
+    collection = get_microscopy_collection(input_file)
 
     cell_wall_stack = collection.zstack_array(s=0, c=cell_wall_channel)
     marker_stack = collection.zstack_array(s=0, c=marker_channel)
