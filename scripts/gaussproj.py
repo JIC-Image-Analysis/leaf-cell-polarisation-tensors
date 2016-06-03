@@ -29,7 +29,7 @@ def generate_surface_from_stack(stack, sd=(2, 2, 2), surface_blur_sd=5):
 
     return smoothed_surface
 
-def projection_from_stack_and_surface(stack, surface, z_below=1, z_above=1):
+def projection_from_stack_and_surface(stack, surface, z_above=1, z_below=1):
     """Return a 2D projection of a 3D stack. The projection is obtained by
     using the elements of the 2D array surface as the Z index for each
     point in the plane."""
@@ -40,8 +40,8 @@ def projection_from_stack_and_surface(stack, surface, z_below=1, z_above=1):
     for x in range(xdim):
         for y in range(ydim):
             z_index = surface[x, y]
-            z_min = max(0, z_index-z_below)
-            z_max = min(zdim-1, z_index+z_above)
+            z_min = max(0, z_index-z_above)
+            z_max = min(zdim-1, z_index+z_below)
             value = np.mean(stack[x, y, z_min:z_max])
             projection[x, y] = value
 
