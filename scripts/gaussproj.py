@@ -3,6 +3,7 @@ import argparse
 
 import numpy as np
 import scipy.ndimage as nd
+import PIL.Image
 
 from jicbioimage.core.image import Image
 
@@ -54,8 +55,6 @@ def save_image(filename, image):
         f.write(image.png())
 
 def generate_projections_from_microscope_image(input_file,
-                                               cell_wall_file,
-                                               marker_file,
                                                wall_channel,
                                                marker_channel):
     """Generate and save projections generated from a stack loaded from the
@@ -79,14 +78,14 @@ def generate_projections_from_microscope_image(input_file,
                                                           surface, 5, 5)
 
 
-    save_image(cell_wall_file, cell_wall_projection)
-    save_image(marker_file, marker_projection)
+    save_image("wall.png", cell_wall_projection)
+    save_image("marker.png", marker_projection)
+    pil_im = PIL.Image.fromarray(surface.astype(np.uint8))
+    pil_im.save('surface.png')
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('input_file', help="Input microscope file.")
-    parser.add_argument('cell_wall_filename', help="Filename to use for output cell wall projection image.")
-    parser.add_argument('marker_filename', help="Filename to use for output marker channel projection image.")
     parser.add_argument("-w", "--wall-channel",
                         default=1, type=int,
                         help="Wall channel (zero indexed)")
@@ -97,8 +96,6 @@ def main():
     args = parser.parse_args()
 
     generate_projections_from_microscope_image(args.input_file,
-                                               args.cell_wall_filename,
-                                               args.marker_filename,
                                                args.wall_channel,
                                                args.marker_channel)
 
