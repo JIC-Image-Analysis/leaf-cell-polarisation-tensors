@@ -51,8 +51,8 @@ def projection_from_stack_and_surface(stack, surface, z_above=1, z_below=1):
     for x in range(xdim):
         for y in range(ydim):
             z_index = surface[x, y]
-            z_min = max(0, z_index-z_above)
-            z_max = min(zdim-1, z_index+z_below)
+            z_min = min(zdim - 1, max(0, z_index-z_above))
+            z_max = max(1, min(zdim, z_index+z_below))
             value = np.mean(stack[x, y, z_min:z_max])
             projection[x, y] = value
 
