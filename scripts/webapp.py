@@ -45,28 +45,39 @@ def index():
 @app.route("/inactivate_tensor/<int:tensor_id>", methods=["POST"])
 def inactivate_tensor(tensor_id):
     if request.method == "POST":
-        app.tensor_manager.inactivate_tensor(tensor_id)
+        info = app.tensor_manager.inactivate_tensor(tensor_id)
         write_audit_log()
         app.logger.debug("Inactivated tensor {:d}".format(tensor_id))
-        return "Inactivated tensor {:d}\n".format(tensor_id)
+        app.logger.debug(info)
+        return info
 
 
 @app.route("/update_marker/<int:tensor_id>/<float:y>/<float:x>", methods=["POST"])
 def update_marker(tensor_id, y, x):
     if request.method == "POST":
-        app.tensor_manager.update_marker(tensor_id, (y, x))
+        info = app.tensor_manager.update_marker(tensor_id, (y, x))
         write_audit_log()
-        app.logger.debug("Updated tensor {:d} marker to ({:.2f}, {:.2f})\n".format(tensor_id, y, x))
-        return "Updated tensor {:d} marker to ({:.2f}, {:.2f})\n".format(tensor_id, y, x)
+        app.logger.debug("Updated marker: {}".format(info))
+        return info
 
 
 @app.route("/update_centroid/<int:tensor_id>/<float:y>/<float:x>", methods=["POST"])
 def update_centroid(tensor_id, y, x):
     if request.method == "POST":
-        app.tensor_manager.update_centroid(tensor_id, (y, x))
+        info = app.tensor_manager.update_centroid(tensor_id, (y, x))
         write_audit_log()
-        app.logger.debug("Updated tensor {:d} centroid to ({:.2f}, {:.2f})\n".format(tensor_id, y, x))
-        return "Updated tensor {:d} centroid to ({:.2f}, {:.2f})\n".format(tensor_id, y, x)
+        app.logger.debug("Update centroid: {}".format(info))
+        return info
+
+
+@app.route("/add_tensor/<float:centroid_y>/<float:centroid_x>/<float:marker_y>/<float:marker_x>", methods=["POST"])
+def add_tensor(centroid_y, centroid_x, marker_y, marker_x):
+    if request.method == "POST":
+        info = app.tensor_manager.add_tensor((centroid_y, centroid_x),
+                                                  (marker_y, marker_x))
+        write_audit_log()
+        app.logger.debug("Add tensor: {}".format(info))
+        return info
 
 
 @app.route("/undo", methods=["POST"])
@@ -133,4 +144,4 @@ if __name__ == "__main__":
 
     app.tensor_manager = tensor_manager
 
-    app.run("0.0.0.0")
+    app.run("0.0.0.0", debug=True)
