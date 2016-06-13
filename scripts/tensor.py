@@ -243,7 +243,7 @@ class TensorManager(dict):
                       do_args=[tensor_id, centroid, marker, "manual"],
                       undo_args=[tensor_id])
         self.run_command(cmd)
-        return tensor_id
+        return cmd.audit_log
 
     def inactivate_tensor(self, tensor_id):
         """Mark a tensor as inactive."""
@@ -253,6 +253,7 @@ class TensorManager(dict):
                       do_args=["active", False],
                       undo_args=["active", True])
         self.run_command(cmd)
+        return cmd.audit_log
 
     def update_centroid(self, tensor_id, new_position):
         """Update the position of a centroid."""
@@ -263,6 +264,7 @@ class TensorManager(dict):
                       do_args=["centroid", list(new_position)],
                       undo_args=["centroid", prev_position])
         self.run_command(cmd)
+        return cmd.audit_log
 
     def update_marker(self, tensor_id, new_position):
         """Update the position of a marker."""
@@ -273,6 +275,7 @@ class TensorManager(dict):
                       do_args=["marker", list(new_position)],
                       undo_args=["marker", prev_position])
         self.run_command(cmd)
+        return cmd.audit_log
 
     def read_raw_tensors(self, fh):
         """Read in raw tensors from file."""
