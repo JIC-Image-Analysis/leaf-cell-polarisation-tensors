@@ -1,4 +1,6 @@
 var selected = null;
+var mode = "move-tensor";
+var add_marker_position = null;
 
 function toggleChannels() {
   var wall_intensity = document.getElementById("cell_wall_intensity");
@@ -38,7 +40,7 @@ function clearSelection(event) {
   }
 }
 
-function action_from_json(info) {
+function update_tensor_from_json(info) {
   var tensor_id = "tensor-" + info["tensor_id"];
   var marker_id = "marker-" + info["tensor_id"];
   var centroid_id = "centroid-" + info["tensor_id"];
@@ -47,48 +49,98 @@ function action_from_json(info) {
   var marker = document.getElementById(marker_id);
   var centroid = document.getElementById(centroid_id);
 
-  if (info["action"] == "update") {
-    for (var key in info) {
-      var value = info[key];
-      if (key == "tensor_id" || key == "update") {
-        continue;
-      }
-      else {
-        if (key == "active") {
-          if (value) {
-            tensor.setAttribute("visibility", "visible");
-            marker.setAttribute("visibility", "visible");
-            centroid.setAttribute("visibility", "visible");
-          }
-          else {
-            tensor.setAttribute("visibility", "hidden");
-            marker.setAttribute("visibility", "hidden");
-            centroid.setAttribute("visibility", "hidden");
-          }
+  for (var key in info) {
+    var value = info[key];
+    if (key == "tensor_id" || key == "update") {
+      continue;
+    }
+    else {
+      if (key == "active") {
+        if (value) {
+          tensor.setAttribute("visibility", "visible");
+          marker.setAttribute("visibility", "visible");
+          centroid.setAttribute("visibility", "visible");
         }
         else {
-          var x = value[1];
-          var y = value[0];
-          if (key == "marker") {
-            // Update the tensor line.
-            tensor.setAttribute("x1", x);
-            tensor.setAttribute("y1", y);
+          tensor.setAttribute("visibility", "hidden");
+          marker.setAttribute("visibility", "hidden");
+          centroid.setAttribute("visibility", "hidden");
+        }
+      }
+      else {
+        var x = value[1];
+        var y = value[0];
+        if (key == "marker") {
+          // Update the tensor line.
+          tensor.setAttribute("x1", x);
+          tensor.setAttribute("y1", y);
 
-            // Update the marker circle.
-            marker.setAttribute("cx", x);
-            marker.setAttribute("cy", y);
-          }
-          if (key == "centroid") {
-            tensor.setAttribute("x2", x);
-            tensor.setAttribute("y2", y);
+          // Update the marker circle.
+          marker.setAttribute("cx", x);
+          marker.setAttribute("cy", y);
+        }
+        if (key == "centroid") {
+          tensor.setAttribute("x2", x);
+          tensor.setAttribute("y2", y);
 
-            // Update the centroid circle.
-            centroid.setAttribute("cx", x);
-            centroid.setAttribute("cy", y);
-          }
+          // Update the centroid circle.
+          centroid.setAttribute("cx", x);
+          centroid.setAttribute("cy", y);
         }
       }
     }
+  }
+}
+
+function create_svg_element(type, identifier) {
+  var xmlns = "http://www.w3.org/2000/svg";
+  var e = document.createElementNS(xmlns, type);
+  e.setAttribute("id", identifier);
+  e.setAttribute("visibility", "visible");
+  return e;
+}
+
+function create_line(identifier, x1, y1, x2, y2) {
+  var e = create_svg_element("line", identifier);
+  e.setAttribute("class", "tensor");
+  e.setAttribute("x1", x1);
+  e.setAttribute("y1", y1);
+  e.setAttribute("x2", x2);
+  e.setAttribute("y2", y2);
+  e.setAttribute("marker-end", "url(#Triangle)");
+  return e;
+}
+
+function create_circle(identifier, x, y) {
+  var e = create_svg_element("circle", identifier);
+  e.setAttribute("cx", x);
+  e.setAttribute("cy", y);
+  e.setAttribute("r", "3");
+  return e;
+}
+
+function add_tensor_from_json(info) {
+  var tensor_id = "tensor-" + info["tensor_id"];
+  var marker_id = "marker-" + info["tensor_id"];
+  var centroid_id = "centroid-" + info["tensor_id"];
+
+  var tensor = create_line(tensor_id, info["marker"][1], info["marker"][0], info["centroid"][1], info["centroid"][0]);
+  var marker = create_circle(marker_id, info["marker"][1], info["marker"][0]);
+  var centroid = create_circle(centroid_id, info["centroid"][1], info["centroid"][0]);
+
+  marker.setAttribute("class", "marker");
+  centroid.setAttribute("class", "centroid");
+
+  document.getElementById("tensors").appendChild(tensor);
+  document.getElementById("tensors").appendChild(marker);
+  document.getElementById("tensors").appendChild(centroid);
+}
+
+function action_from_json(info) {
+  if (info["action"] == "update") {
+    update_tensor_from_json(info);
+  } else if (info["action"] == "create") {
+    add_tensor_from_json(info);
   }
 }
 
@@ -122,6 +174,14 @@ function redo(event) {
   };
   xhttp.open("POST", url, true);
   xhttp.send()
+}
+
+function moveTensorMode(event) {
+  mode = "move-tensor";
+}
+
+function addTensorMode(event) {
+  mode = "add-tensor";
 }
 
 function selectElement(event) {
@@ -190,6 +250,44 @@ function movePoint(event) {
   }
 }
 
+function addTensor(event) {
+  clearSelection();
+  if (!add_marker_position) {
+    add_marker_position = svgCursorPoint(event);
+  }
+  else {
+    var add_centroid_positon = svgCursorPoint(event);
+    // Ajax call.
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (xhttp.readyState == 4 && xhttp.status == 200) {
+        if (!xhttp.responseText.startsWith("None")) {
+          var info = JSON.parse(xhttp.responseText);
+          action_from_json(info);
+        }
+      }
+    };
+    var url = "add_tensor/" 
+              + add_centroid_positon.y.toFixed(4)
+              + "/" + add_centroid_positon.x.toFixed(4)
+              + "/" + add_marker_position.y.toFixed(4)
+              + "/" + add_marker_position.x.toFixed(4);
+    xhttp.open("POST", url, true);
+    xhttp.send()
+    
+    add_marker_position = null;
+  }
+}
+
+function mouseDownOnCanvas(event) {
+  if (mode == "move-tensor") {
+    movePoint(event);
+  }
+  else if (mode == "add-tensor") {
+    addTensor(event);
+  }
+}
+
 function inactivateTensor(event) {
   var words = this.id.split("-");
   var type = words[0];
@@ -255,7 +353,7 @@ function init() {
     tensors[i].onmousedown = inactivateTensor;
   }
 
-  document.getElementById("cell_wall_intensity").onmousedown = movePoint;
-  document.getElementById("marker_intensity").onmousedown = movePoint;
-  document.getElementById("segmentation").onmousedown = movePoint;
+  document.getElementById("cell_wall_intensity").onmousedown = mouseDownOnCanvas;
+  document.getElementById("marker_intensity").onmousedown = mouseDownOnCanvas;
+  document.getElementById("segmentation").onmousedown = mouseDownOnCanvas;
 }
