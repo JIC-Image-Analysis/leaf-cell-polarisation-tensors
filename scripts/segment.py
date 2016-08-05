@@ -68,6 +68,8 @@ def segment_cells(image, max_cell_size):
 
 def segment_markers(image, wall_mask, min_size, threshold):
     """Return segmented markers."""
+    image = identity(image)
+
     image = threshold_abs(image, threshold)
     image = marker_in_wall(image, wall_mask)
     image = remove_small_objects(image, min_size=min_size)
@@ -85,10 +87,10 @@ def segment(microscopy_collection, wall_channel, marker_channel):
     wall_projection = projection_from_stack_and_surface(wall_stack,
                                                         surface)
     marker_projection = projection_from_stack_and_surface(marker_stack,
-                                                          surface)
+                                                          surface, 1, 1)
 
     cells, wall_mask = segment_cells(wall_projection, max_cell_size=10000)
-    markers = segment_markers(marker_projection, wall_mask, min_size=10,
+    markers = segment_markers(marker_projection, wall_mask, min_size=5,
                               threshold=100)
 
     return cells, markers
