@@ -42,12 +42,13 @@ def generate_surface_from_stack(stack, sd=(10, 10, 10), surface_blur_sd=5):
     positions_to_move_to_bottom = np.logical_and(raw_surface == 0,
                                                  cropped_stack[:, :, 0] == 0)
     raw_surface[positions_to_move_to_bottom] = zdim - 1
+
     smoothed_surface = nd.gaussian_filter(raw_surface, surface_blur_sd)
 
     return smoothed_surface
 
 
-def projection_from_stack_and_surface(stack, surface, z_above=1, z_below=9):
+def projection_from_stack_and_surface(stack, surface, z_above=1, z_below=5):
     """Return a 2D projection of a 3D stack. The projection is obtained by
     using the elements of the 2D array surface as the Z index for each
     point in the plane."""

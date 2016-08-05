@@ -1,9 +1,104 @@
 import argparse
 
+import skimage.filters
 
-def generate_segmentations_from_microscope_image(input_file, wall_channel,
-                                                 marker_channel):
+from jicbioimage.core.io import AutoName
+from jicbioimage.core.transform import transformation
+from jicbioimage.transform import (
+    invert,
+    dilate_binary,
+    remove_small_objects,
+)
+from jicbioimage.segment import connected_components, watershed_with_seeds
+
+from utils import get_microscopy_collection
+from gaussproj import (
+    generate_surface_from_stack,
+    projection_from_stack_and_surface,
+)
+
+AutoName.prefix_format = "{:03d}_"
+
+
+@transformation
+def identity(image):
+    return image
+
+
+@transformation
+def threshold_adaptive_median(image, block_size):
+    return skimage.filters.threshold_adaptive(image, block_size=block_size)
+
+
+@transformation
+def remove_large_segments(segmentation, max_size):
+    for i in segmentation.identifiers:
+        region = segmentation.region_by_identifier(i)
+        if region.area > max_size:
+            segmentation[region] = 0
+    return segmentation
+
+
+@transformation
+def marker_in_wall(marker, wall):
+    return marker * wall
+
+
+@transformation
+def threshold_abs(image, threshold):
+    return image > threshold
+
+
+def segment_cells(image, max_cell_size):
+    """Return segmented cells and binary wall mask."""
+    image = identity(image)
+
+    wall_mask = threshold_adaptive_median(image, block_size=101)
+    wall_mask = remove_small_objects(wall_mask, min_size=100)
+    wall_mask = dilate_binary(wall_mask)
+
+    seeds = invert(wall_mask)
+    seeds = remove_small_objects(seeds, min_size=5)
+    seeds = connected_components(seeds, background=0)
+
+    segmentation = watershed_with_seeds(-image, seeds=seeds)
+    segmentation = remove_large_segments(segmentation, max_cell_size)
+    return segmentation, wall_mask
+
+
+def segment_markers(image, wall_mask, min_size, threshold):
+    """Return segmented markers."""
+    image = threshold_abs(image, threshold)
+    image = marker_in_wall(image, wall_mask)
+    image = remove_small_objects(image, min_size=min_size)
+
+    segmentation = connected_components(image, background=0)
+    return segmentation
+
+
+def segment(microscopy_collection, wall_channel, marker_channel):
+    """Return cell and marker segmentations."""
+    wall_stack = microscopy_collection.zstack_array(c=wall_channel)
+    marker_stack = microscopy_collection.zstack_array(c=marker_channel)
+
+    surface = generate_surface_from_stack(wall_stack)
+    wall_projection = projection_from_stack_and_surface(wall_stack,
+                                                        surface)
+    marker_projection = projection_from_stack_and_surface(marker_stack,
+                                                          surface)
+
+    cells, wall_mask = segment_cells(wall_projection, max_cell_size=10000)
+    markers = segment_markers(marker_projection, wall_mask, min_size=10,
+                              threshold=100)
+
+    return cells, markers
+
+
+def generate_segmentations(microscopy_collection, wall_channel,
+                           marker_channel):
     """Generate cell-segmentation.png and marker-segmentation.png files."""
+    cells, markers = segment(microscopy_collection, wall_channel,
+                             marker_channel)
 
 
 def main():
@@ -18,9 +113,9 @@ def main():
 
     args = parser.parse_args()
 
-    generate_segmentations_from_microscope_image(args.input_file,
-                                                 args.wall_channel,
-                                                 args.marker_channel)
+    microscopy_collection = get_microscopy_collection(args.input_file)
+    generate_segmentations(microscopy_collection, args.wall_channel,
+                           args.marker_channel)
 
 
 if __name__ == "__main__":
