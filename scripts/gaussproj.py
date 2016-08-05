@@ -47,7 +47,7 @@ def generate_surface_from_stack(stack, sd=(10, 10, 10), surface_blur_sd=5):
     return smoothed_surface
 
 
-def projection_from_stack_and_surface(stack, surface, z_above=1, z_below=1):
+def projection_from_stack_and_surface(stack, surface, z_above=1, z_below=9):
     """Return a 2D projection of a 3D stack. The projection is obtained by
     using the elements of the 2D array surface as the Z index for each
     point in the plane."""
@@ -82,19 +82,17 @@ def generate_projections_from_microscope_image(input_file,
     projections of that channel, as well as the marker channel (assumed to
     be channel 0)."""
 
-    cell_wall_channel = wall_channel
-    marker_channel = marker_channel
     collection = get_microscopy_collection(input_file)
 
-    cell_wall_stack = collection.zstack_array(s=0, c=cell_wall_channel)
+    wall_stack = collection.zstack_array(s=0, c=wall_channel)
     marker_stack = collection.zstack_array(s=0, c=marker_channel)
 
-    surface = generate_surface_from_stack(cell_wall_stack)
+    surface = generate_surface_from_stack(wall_stack)
 
-    cell_wall_projection = projection_from_stack_and_surface(cell_wall_stack,
-                                                             surface, 5, 5)
+    cell_wall_projection = projection_from_stack_and_surface(wall_stack,
+                                                             surface)
     marker_projection = projection_from_stack_and_surface(marker_stack,
-                                                          surface, 5, 5)
+                                                          surface)
 
     save_image("wall.png", cell_wall_projection)
     save_image("marker.png", marker_projection)
