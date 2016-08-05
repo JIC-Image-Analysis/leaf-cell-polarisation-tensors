@@ -3,6 +3,7 @@ import argparse
 import skimage.filters
 
 from jicbioimage.core.io import AutoName
+from jicbioimage.core.util.color import pretty_color_from_identifier
 from jicbioimage.core.transform import transformation
 from jicbioimage.transform import (
     invert,
@@ -10,6 +11,7 @@ from jicbioimage.transform import (
     remove_small_objects,
 )
 from jicbioimage.segment import connected_components, watershed_with_seeds
+from jicbioimage.illustrate import AnnotatedImage
 
 from utils import get_microscopy_collection
 from gaussproj import (
@@ -93,14 +95,34 @@ def segment(microscopy_collection, wall_channel, marker_channel):
     markers = segment_markers(marker_projection, wall_mask, min_size=5,
                               threshold=100)
 
-    return cells, markers
+    return cells, markers, wall_projection, marker_projection
 
 
 def generate_segmentations(microscopy_collection, wall_channel,
                            marker_channel):
     """Generate cell-segmentation.png and marker-segmentation.png files."""
-    cells, markers = segment(microscopy_collection, wall_channel,
-                             marker_channel)
+    (cells,
+     markers,
+     wall_projection,
+     marker_projection) = segment(microscopy_collection, wall_channel,
+                                  marker_channel)
+
+    def get_ann(segmentation, projection):
+        ann = AnnotatedImage.from_grayscale(projection)
+        for i in segmentation.identifiers:
+            color = pretty_color_from_identifier(i)
+            region = segmentation.region_by_identifier(i)
+            ann.mask_region(region.border, color)
+        return ann
+
+    ann = get_ann(cells, wall_projection)
+    with open("cell-segmentation.png", "wb") as fh:
+        fh.write(ann.png())
+
+    ann = get_ann(markers, marker_projection)
+    with open("marker-segmentation.png", "wb") as fh:
+        fh.write(ann.png())
+
 
 
 def main():
