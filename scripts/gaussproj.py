@@ -1,4 +1,3 @@
-import os
 import argparse
 
 import numpy as np
@@ -8,10 +7,6 @@ import PIL.Image
 from jicbioimage.core.image import Image
 
 from utils import get_microscopy_collection
-
-HERE = os.path.dirname(__file__)
-UNPACK = os.path.join(HERE, '..', 'data', 'unpack')
-OUTPUT = os.path.join(HERE, '..', 'output')
 
 
 def generate_surface_from_stack(stack, sd=(10, 10, 10), surface_blur_sd=5):
