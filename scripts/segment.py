@@ -2,7 +2,7 @@ import argparse
 
 import skimage.filters
 
-from jicbioimage.core.io import AutoName
+from jicbioimage.core.io import AutoName, AutoWrite
 from jicbioimage.core.util.color import pretty_color_from_identifier
 from jicbioimage.core.transform import transformation
 from jicbioimage.transform import (
@@ -93,7 +93,7 @@ def segment(microscopy_collection, wall_channel, marker_channel):
 
     cells, wall_mask = segment_cells(wall_projection, max_cell_size=10000)
     markers = segment_markers(marker_projection, wall_mask, min_size=5,
-                              threshold=100)
+                              threshold=70)
 
     return cells, markers, wall_projection, marker_projection
 
@@ -134,9 +134,11 @@ def main():
     parser.add_argument("-m", "--marker-channel",
                         default=0, type=int,
                         help="Marker channel (zero indexed)")
+    parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
 
+    AutoWrite.on = args.debug
     microscopy_collection = get_microscopy_collection(args.input_file)
     generate_segmentations(microscopy_collection, args.wall_channel,
                            args.marker_channel)
