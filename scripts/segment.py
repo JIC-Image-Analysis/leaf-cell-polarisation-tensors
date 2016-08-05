@@ -1,3 +1,4 @@
+import os
 import argparse
 
 import skimage.filters
@@ -99,7 +100,7 @@ def segment(microscopy_collection, wall_channel, marker_channel):
 
 
 def generate_segmentations(microscopy_collection, wall_channel,
-                           marker_channel):
+                           marker_channel, fprefix):
     """Generate cell-segmentation.png and marker-segmentation.png files."""
     (cells,
      markers,
@@ -116,18 +117,35 @@ def generate_segmentations(microscopy_collection, wall_channel,
         return ann
 
     ann = get_ann(cells, wall_projection)
-    with open("cell-segmentation.png", "wb") as fh:
+    fpath = os.path.join(AutoName.directory, fprefix + "-cell-segmentation.png")
+    with open(fpath, "wb") as fh:
         fh.write(ann.png())
 
     ann = get_ann(markers, marker_projection)
-    with open("marker-segmentation.png", "wb") as fh:
+    fpath = os.path.join(AutoName.directory, fprefix + "-marker-segmentation.png")
+    with open(fpath, "wb") as fh:
         fh.write(ann.png())
 
+
+def analyse_file(fpath, wall_channel, marker_channel):
+    """Analyse a single file."""
+    microscopy_collection = get_microscopy_collection(fpath)
+    fprefix = os.path.basename(fpath)
+    fprefix, _ = os.path.splitext(fprefix)
+    generate_segmentations(microscopy_collection, wall_channel, marker_channel, fprefix)
+
+
+def analyse_directory(input_directory, wall_channel, marker_channel):
+    """Analyse all the files in a directory."""
+    for fname in os.listdir(input_directory):
+        fpath = os.path.join(input_directory, fname)
+        analyse_file(fpath, wall_channel, marker_channel)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('input_file', help="Input microscope file.")
+    parser.add_argument('input_source', help="Input file / directory.")
+    parser.add_argument("output_dir", help="Output directory")
     parser.add_argument("-w", "--wall-channel",
                         default=1, type=int,
                         help="Wall channel (zero indexed)")
@@ -139,9 +157,20 @@ def main():
     args = parser.parse_args()
 
     AutoWrite.on = args.debug
-    microscopy_collection = get_microscopy_collection(args.input_file)
-    generate_segmentations(microscopy_collection, args.wall_channel,
-                           args.marker_channel)
+
+    # Create the output directory if it does not exist.
+    if not os.path.isdir(args.output_dir):
+        os.mkdir(args.output_dir)
+    AutoName.directory = args.output_dir
+
+    # Run the analysis.
+    if os.path.isfile(args.input_source):
+        analyse_file(args.input_source, args.wall_channel, args.marker_channel)
+    elif os.path.isdir(args.input_source):
+        analyse_directory(args.input_source, args.wall_channel,
+                          args.marker_channel)
+    else:
+        parser.error("{} not a file or directory".format(args.input_source))
 
 
 if __name__ == "__main__":
