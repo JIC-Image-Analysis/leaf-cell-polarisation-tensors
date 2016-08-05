@@ -23,7 +23,6 @@ def generate_surface_from_stack(stack, sd=(10, 10, 10), surface_blur_sd=5):
     sd: standard deviation in each direction
     surface_blur_sd: standard deviation of smoothing applied to 2D surface."""
 
-
     ydim, xdim, zdim = stack.shape
     pad_val = 5
     padding = pad_val * 2
@@ -31,14 +30,27 @@ def generate_surface_from_stack(stack, sd=(10, 10, 10), surface_blur_sd=5):
                             dtype=stack.dtype)
     start = pad_val
     end_add = pad_val
-    padded_stack[start:ydim+end_add, start:xdim+end_add, start:zdim+end_add] = stack
+    padded_stack[start:ydim+end_add,
+                 start:xdim+end_add,
+                 start:zdim+end_add] = stack
     smoothed_stack = nd.gaussian_filter(padded_stack, sd)
-    cropped_stack = smoothed_stack[start:ydim+end_add, start:xdim+end_add, start:zdim+end_add]
+    cropped_stack = smoothed_stack[start:ydim+end_add,
+                                   start:xdim+end_add,
+                                   start:zdim+end_add]
     raw_surface = np.argmax(cropped_stack, 2)
-    raw_surface[np.logical_and(raw_surface==0, cropped_stack[:,:,0] == 0)] = zdim-1
+
+    # There are two situations in which the raw surface could have a value
+    # of zero. The maximum value could have been located in the first
+    # z-slice (correct). The z-column contained only zeros (incorrect).
+    # In the latter case we want the value of the raw surface to be at
+    # the bottom of the projection (zdim - 1).
+    positions_to_move_to_bottom = np.logical_and(raw_surface == 0,
+                                                 cropped_stack[:, :, 0] == 0)
+    raw_surface[positions_to_move_to_bottom] = zdim - 1
     smoothed_surface = nd.gaussian_filter(raw_surface, surface_blur_sd)
 
     return smoothed_surface
+
 
 def projection_from_stack_and_surface(stack, surface, z_above=1, z_below=1):
     """Return a 2D projection of a 3D stack. The projection is obtained by
@@ -58,11 +70,13 @@ def projection_from_stack_and_surface(stack, surface, z_above=1, z_below=1):
 
     return projection.view(Image)
 
+
 def save_image(filename, image):
     """Save the given image to a file."""
 
     with open(filename, 'wb') as f:
         f.write(image.png())
+
 
 def generate_projections_from_microscope_image(input_file,
                                                wall_channel,
@@ -87,11 +101,11 @@ def generate_projections_from_microscope_image(input_file,
     marker_projection = projection_from_stack_and_surface(marker_stack,
                                                           surface, 5, 5)
 
-
     save_image("wall.png", cell_wall_projection)
     save_image("marker.png", marker_projection)
     pil_im = PIL.Image.fromarray(surface.astype(np.uint8))
     pil_im.save('surface.png')
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -108,6 +122,7 @@ def main():
     generate_projections_from_microscope_image(args.input_file,
                                                args.wall_channel,
                                                args.marker_channel)
+
 
 if __name__ == "__main__":
     main()
