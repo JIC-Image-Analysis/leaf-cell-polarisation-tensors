@@ -5,6 +5,7 @@ import os.path
 import copy
 import json
 import logging
+import operator
 
 from utils import marker_cell_identifier
 
@@ -169,6 +170,12 @@ class TensorManager(dict):
         return sorted(ids)
 
     @property
+    def cell_identifiers(self):
+        ids = [t.cell_id for t in self.values()]
+        ids = set(ids)
+        return sorted(list(ids))
+
+    @property
     def audit_log(self):
         """Return list of commands excluding undone ones."""
         num_commands = len(self.commands) + self.command_offset
@@ -183,6 +190,10 @@ class TensorManager(dict):
             tensor = self[tensor_id]
             lines.append(tensor.csv_line)
         return lines
+
+    def cell_tensors(self, cell_id):
+        tensors = [t for t in self.values() if t.cell_id == cell_id]
+        return sorted(tensors, key=operator.attrgetter("tensor_id"))
 
     def run_command(self, cmd):
         """Add command to command list and run it."""
@@ -334,11 +345,14 @@ def get_tensors(cells, markers):
             continue
         c_region = cells.region_by_identifier(cell_id)
         centroid = c_region.centroid
-        tensor_manager.create_tensor(tensor_id, centroid, marker_position)
+        tensor_manager.create_tensor(tensor_id, cell_id, centroid, marker_position)
     return tensor_manager
 
 
 def test_overall_api():
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.WARNING)
 
     # Test the creation of a tensor.
     tensor_manager = TensorManager()
@@ -459,6 +473,19 @@ def test_overall_api():
     assert Tensor.extended_keys() == ["tensor_id", "cell_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active"]
     assert Tensor.csv_header() == "tensor_id,cell_id,centroid_row,centroid_col,marker_row,marker_col,creation_type,active"
     assert tensor1.csv_line == "1,0,1,10,3,5,automated,False"
+
+    # Test cell_identifiers functionality.
+    tensor_manager.create_tensor(10, 0, (0, 1), (3, 5))
+    assert len(tensor_manager) == 5
+    assert sorted([t.cell_id for t in tensor_manager.values()]) == [0, 0, 1, 2, 4]
+    assert tensor_manager.cell_identifiers == [0, 1, 2, 4]
+
+    # Test multiple tensors per cell
+    assert len(tensor_manager.cell_tensors(cell_id=4)) == 1
+    assert len(tensor_manager.cell_tensors(0)) == 2
+    t = tensor_manager.cell_tensors(0)[0]
+    assert isinstance(t, Tensor)
+    assert t.tensor_id == 1
 
     # Clean up.
     os.unlink(audit_file)
