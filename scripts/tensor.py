@@ -12,8 +12,9 @@ from utils import marker_cell_identifier
 class Tensor(object):
     """Class for managing individual tensors."""
 
-    def __init__(self, tensor_id, centroid, marker, creation_type):
+    def __init__(self, tensor_id, cell_id, centroid, marker, creation_type):
         self._data = dict(tensor_id=tensor_id,
+                          cell_id=cell_id,
                           centroid=list(centroid),
                           marker=list(marker),
                           creation_type=creation_type,
@@ -32,17 +33,18 @@ class Tensor(object):
 
     @staticmethod
     def keys():
-        return ["tensor_id", "centroid", "marker", "creation_type", "active"]
+        return ["tensor_id", "cell_id", "centroid", "marker", "creation_type", "active"]
 
     @staticmethod
     def extended_keys():
-        return ["tensor_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active"]
+        return ["tensor_id", "cell_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active"]
 
     @staticmethod
     def from_json(line):
         """Create Tensor from json string."""
         d = json.loads(line)
         tensor = Tensor(tensor_id=d["tensor_id"],
+                        cell_id=d["cell_id"],
                         centroid=list(d["centroid"]),
                         marker=list(d["marker"]),
                         creation_type=d["creation_type"])
@@ -65,6 +67,11 @@ class Tensor(object):
     def tensor_id(self):
         """Return the tensor identifier."""
         return self._data["tensor_id"]
+
+    @property
+    def cell_id(self):
+        """Return the cell identifier."""
+        return self._data["cell_id"]
 
     @property
     def centroid(self):
@@ -214,13 +221,13 @@ class TensorManager(dict):
         self.command_offset += 1
         return info
 
-    def create_tensor(self, tensor_id, centroid, marker,
+    def create_tensor(self, tensor_id, cell_id, centroid, marker,
                       creation_type="automated"):
         """Create a tensor and store it.
 
         Not for manual editing.
         """
-        self[tensor_id] = Tensor(tensor_id, centroid, marker, creation_type)
+        self[tensor_id] = Tensor(tensor_id, cell_id, centroid, marker, creation_type)
         d = copy.deepcopy(self[tensor_id]._data)
         d["action"] = "create"
         logging.debug(json.dumps(d))
@@ -232,7 +239,7 @@ class TensorManager(dict):
         del self[tensor_id]
         logging.debug(json.dumps(d))
 
-    def add_tensor(self, centroid, marker):
+    def add_tensor(self, cell_id, centroid, marker):
         """Add a tensor manually.
 
         For manual editing with undo.
@@ -240,7 +247,7 @@ class TensorManager(dict):
         tensor_id = max(self.identifiers) + 1
         cmd = Command(do_method=self.create_tensor,
                       undo_method=self._delete_tensor,
-                      do_args=[tensor_id, centroid, marker, "manual"],
+                      do_args=[tensor_id, cell_id, centroid, marker, "manual"],
                       undo_args=[tensor_id])
         self.run_command(cmd)
         return cmd.audit_log
@@ -335,10 +342,11 @@ def test_overall_api():
 
     # Test the creation of a tensor.
     tensor_manager = TensorManager()
-    tensor_manager.create_tensor(1, (0, 0), (3, 5))
+    tensor_manager.create_tensor(1, 0, (0, 0), (3, 5))
     tensor1 = tensor_manager[1]
     assert isinstance(tensor1, Tensor)
     assert tensor1.tensor_id == 1
+    assert tensor1.cell_id == 0
     assert tensor1.centroid == [0, 0]
     assert tensor1.marker == [3, 5]
     assert tensor1.creation_type == "automated"
@@ -380,18 +388,19 @@ def test_overall_api():
 
     # Test TensorManager.identifiers property.
     assert tensor_manager.identifiers == [1]
-    tensor_manager.create_tensor(5, (4, 0), (7, 5))
+    tensor_manager.create_tensor(5, 1, (4, 0), (7, 5))
     assert tensor_manager.identifiers == [1, 5]
-    tensor_manager.create_tensor(2, (2, 8), (1, 6))
+    tensor_manager.create_tensor(2, 2, (2, 8), (1, 6))
     assert tensor_manager.identifiers == [1, 2, 5]
 
     # Test add_tensor undo/redo.
-    tensor_json = tensor_manager.add_tensor((3, 4), (5, 6))
+    tensor_json = tensor_manager.add_tensor(3, (3, 4), (5, 6))
     tensor = json.loads(tensor_json)
     tensor_id = tensor["tensor_id"]
     assert tensor_id == 6
     tensor = tensor_manager[tensor_id]
     assert tensor.tensor_id == tensor_id
+    assert tensor.cell_id == 3
     assert tensor.centroid == [3, 4]
     assert tensor.marker == [5, 6]
     assert tensor.creation_type == "manual"
@@ -420,7 +429,7 @@ def test_overall_api():
     assert tensor_manager.command_offset == 0
 
     # Manually create another tenor.
-    tensor_id = tensor_manager.add_tensor((3, 4), (5, 6))
+    tensor_id = tensor_manager.add_tensor(4, (3, 4), (5, 6))
 
     # Test tensor json property and from_json static method.
     t1_copy = Tensor.from_json(tensor1.json)
@@ -447,9 +456,9 @@ def test_overall_api():
     assert tensor_manager == new_tensor_manager
 
     # Test csv functionality.
-    assert Tensor.extended_keys() == ["tensor_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active"]
-    assert Tensor.csv_header() == "tensor_id,centroid_row,centroid_col,marker_row,marker_col,creation_type,active"
-    assert tensor1.csv_line == "1,1,10,3,5,automated,False"
+    assert Tensor.extended_keys() == ["tensor_id", "cell_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active"]
+    assert Tensor.csv_header() == "tensor_id,cell_id,centroid_row,centroid_col,marker_row,marker_col,creation_type,active"
+    assert tensor1.csv_line == "1,0,1,10,3,5,automated,False"
 
     # Clean up.
     os.unlink(audit_file)
