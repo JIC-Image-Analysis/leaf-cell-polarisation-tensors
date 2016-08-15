@@ -386,7 +386,9 @@ def test_overall_api():
     assert tensor_manager.identifiers == [1, 2, 5]
 
     # Test add_tensor undo/redo.
-    tensor_id = tensor_manager.add_tensor((3, 4), (5, 6))
+    tensor_json = tensor_manager.add_tensor((3, 4), (5, 6))
+    tensor = json.loads(tensor_json)
+    tensor_id = tensor["tensor_id"]
     assert tensor_id == 6
     tensor = tensor_manager[tensor_id]
     assert tensor.tensor_id == tensor_id

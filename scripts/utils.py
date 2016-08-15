@@ -51,3 +51,9 @@ def get_microscopy_collection(input_file):
     else:
         logging.debug("reading in a microscopy file")
         return get_microscopy_collection_from_org(input_file)
+
+
+def marker_cell_identifier(marker_region, cells):
+    """Return cell identifier of marker region."""
+    pos = marker_region.convex_hull.centroid
+    return cells[pos]
