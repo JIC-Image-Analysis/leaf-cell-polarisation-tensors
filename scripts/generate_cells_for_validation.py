@@ -42,9 +42,10 @@ def annotated_region(wall_projection, marker_projection, region, cell_tensors,
         if draw_all:
             ann.draw_line(t.centroid, t.marker, color=(200, 200, 0))
 
-    ann.draw_line(largest_area_tensor.centroid,
-                  largest_area_tensor.marker,
-                  color=(200, 0, 200))
+    if largest_area_tensor:
+        ann.draw_line(largest_area_tensor.centroid,
+                      largest_area_tensor.marker,
+                      color=(200, 0, 200))
 
     if crop:
         yis, xis = dilated_region.index_arrays
