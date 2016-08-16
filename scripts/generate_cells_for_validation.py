@@ -166,7 +166,7 @@ def main():
     parser.add_argument("-m", "--marker-channel",
                         default=0, type=int,
                         help="Marker channel (zero indexed)")
-    parser.add_argument("-e", "--excelude-cells-with-no-tensors", action="store_true")
+    parser.add_argument("-e", "--exclude-cells-with-no-tensors", action="store_true")
     parser.add_argument("--no-crop", action="store_true")
     parser.add_argument("--debug", action="store_true")
 
