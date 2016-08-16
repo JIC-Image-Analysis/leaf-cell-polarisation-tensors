@@ -13,14 +13,12 @@ from utils import marker_cell_identifier
 class Tensor(object):
     """Class for managing individual tensors."""
 
-    def __init__(self, tensor_id, cell_id, centroid, marker, creation_type,
-                 rotation=None):
+    def __init__(self, tensor_id, cell_id, centroid, marker, creation_type):
         self._data = dict(tensor_id=tensor_id,
                           cell_id=cell_id,
                           centroid=list(centroid),
                           marker=list(marker),
                           creation_type=creation_type,
-                          rotation=rotation,
                           active=True)
 
     def __eq__(self, other):
@@ -36,11 +34,11 @@ class Tensor(object):
 
     @staticmethod
     def keys():
-        return ["tensor_id", "cell_id", "centroid", "marker", "creation_type", "active", "rotation"]
+        return ["tensor_id", "cell_id", "centroid", "marker", "creation_type", "active"]
 
     @staticmethod
     def extended_keys():
-        return ["tensor_id", "cell_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active", "rotation"]
+        return ["tensor_id", "cell_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active"]
 
     @staticmethod
     def from_json(line):
@@ -50,8 +48,7 @@ class Tensor(object):
                         cell_id=d["cell_id"],
                         centroid=list(d["centroid"]),
                         marker=list(d["marker"]),
-                        creation_type=d["creation_type"],
-                        rotation=d["rotation"])
+                        creation_type=d["creation_type"])
         tensor._data["active"] = d["active"]
         return tensor
 
@@ -111,12 +108,6 @@ class Tensor(object):
     def creation_type(self):
         """Return the creation type (automated/manual)."""
         return self._data["creation_type"]
-
-    @property
-    def rotation(self):
-        """Return the creation rotation in degrees or None if there is no rotation.
-        """
-        return self._data["rotation"]
 
     @property
     def active(self):
@@ -242,12 +233,12 @@ class TensorManager(dict):
         return info
 
     def create_tensor(self, tensor_id, cell_id, centroid, marker,
-                      creation_type="automated", rotation=None):
+                      creation_type="automated"):
         """Create a tensor and store it.
 
         Not for manual editing.
         """
-        self[tensor_id] = Tensor(tensor_id, cell_id, centroid, marker, creation_type, rotation)
+        self[tensor_id] = Tensor(tensor_id, cell_id, centroid, marker, creation_type)
         d = copy.deepcopy(self[tensor_id]._data)
         d["action"] = "create"
         logging.debug(json.dumps(d))
@@ -479,9 +470,9 @@ def test_overall_api():
     assert tensor_manager == new_tensor_manager
 
     # Test csv functionality.
-    assert Tensor.extended_keys() == ["tensor_id", "cell_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active", "rotation"]
-    assert Tensor.csv_header() == "tensor_id,cell_id,centroid_row,centroid_col,marker_row,marker_col,creation_type,active,rotation"
-    assert tensor1.csv_line == "1,0,1,10,3,5,automated,False,None"
+    assert Tensor.extended_keys() == ["tensor_id", "cell_id", "centroid_row", "centroid_col", "marker_row", "marker_col", "creation_type", "active"]
+    assert Tensor.csv_header() == "tensor_id,cell_id,centroid_row,centroid_col,marker_row,marker_col,creation_type,active"
+    assert tensor1.csv_line == "1,0,1,10,3,5,automated,False"
 
     # Test cell_identifiers functionality.
     tensor_manager.create_tensor(10, 0, (0, 1), (3, 5))
@@ -495,10 +486,6 @@ def test_overall_api():
     t = tensor_manager.cell_tensors(0)[0]
     assert isinstance(t, Tensor)
     assert t.tensor_id == 1
-
-    # Test rotation
-    tensor_manager.create_tensor(15, 0, (0, 1), (3, 5), rotation=45)
-    assert tensor_manager[15].rotation == 45
 
     # Clean up.
     os.unlink(audit_file)
