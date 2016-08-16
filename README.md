@@ -20,7 +20,7 @@ $ bash build_docker_images.sh
 $ cd ../
 ```
 
-## Automated tensor analysis
+## Generate cells with tensors for manual validation
 
 1. Put your image file, e.g. ``genotype1.tif`` into the ``data`` directory.
 2. Start a docker session in the analysis container
@@ -33,11 +33,14 @@ $ bash run_analysis_container.sh
 3. Run the automated analysis script on the image
 
 ```
-[root@25278c5a93ec /]# python /scripts/automated_analysis.py /data/genotype1.tif /output/genotype1
+[root@25278c5a93ec /]# python /scripts/generate_cells_for_validation.py /data/genotype1.tif /output/genotype1
 ```
 
 
-## Editing tensors
+## Manual validation of tensors
+
+
+**NEED TO WRITE THIS TOOL!**
 
 1. Start a docker session in the webapp continer
 
