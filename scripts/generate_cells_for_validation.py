@@ -14,15 +14,9 @@ from utils import get_microscopy_collection
 from segment import segment
 from tensor import get_tensors
 
-def annotated_region(wall_projection, marker_projection, region, cell_tensors,
-                     markers, crop=True, draw_all=False):
-    wall_ann = AnnotatedImage.from_grayscale(wall_projection, (1, 0, 0))
-    marker_ann = AnnotatedImage.from_grayscale(marker_projection, (0, 1, 0))
-    ann = wall_ann + marker_ann
-    ann.mask_region(region.border, (200, 200, 200))
-    dilated_region = region.dilate(10)
-    ann[np.logical_not(dilated_region)] = (0, 0, 0)
 
+def best_tensor(cell_tensors, markers):
+    """Return the tensor associated with the largest marker area."""
     largest_area_tensor = None
     largest_area = None
     for i, t in enumerate(cell_tensors):
@@ -34,7 +28,19 @@ def annotated_region(wall_projection, marker_projection, region, cell_tensors,
         elif area > largest_area:
             largest_area_tensor = t
             largest_area = area
+    return largest_area_tensor
 
+
+def annotated_region(wall_projection, marker_projection, region, cell_tensors,
+                     markers, crop=True, draw_all=False):
+    wall_ann = AnnotatedImage.from_grayscale(wall_projection, (1, 0, 0))
+    marker_ann = AnnotatedImage.from_grayscale(marker_projection, (0, 1, 0))
+    ann = wall_ann + marker_ann
+    ann.mask_region(region.border, (200, 200, 200))
+    dilated_region = region.dilate(10)
+    ann[np.logical_not(dilated_region)] = (0, 0, 0)
+
+    for t in cell_tensors:
 #       # Experiment with how to select best tensor.
 #       color = pretty_color_from_identifier(t.tensor_id)
 #       ann.mask_region(marker_region, color)
@@ -42,6 +48,7 @@ def annotated_region(wall_projection, marker_projection, region, cell_tensors,
         if draw_all:
             ann.draw_line(t.centroid, t.marker, color=(200, 200, 0))
 
+    largest_area_tensor = best_tensor(cell_tensors, markers)
     if largest_area_tensor:
         ann.draw_line(largest_area_tensor.centroid,
                       largest_area_tensor.marker,
@@ -89,9 +96,11 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
         ann = annotated_region(wall_projection, marker_projection, region,
                                cell_tensors, markers, crop)
 
+        fmiddle = "-cell-{:03d}".format(cell_id)
+
         num_tensors = len(cell_tensors)
         if num_tensors > 0:
-            fname = fprefix + "-cell-{:03d}.png".format(cell_id)
+            fname = fprefix + fmiddle + ".png"
             fpath = os.path.join(single_tensor_dir, fname)
             with open(fpath, "wb") as fh:
                 fh.write(ann.png())
@@ -99,7 +108,7 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
         if num_tensors > 1:
             ann = annotated_region(wall_projection, marker_projection, region,
                                    cell_tensors, markers, crop, draw_all=True)
-            fname = fprefix + "-cell-{:03d}.png".format(cell_id)
+            fname = fprefix + fmiddle + ".png"
             fpath = os.path.join(multi_tensor_dir, fname)
             with open(fpath, "wb") as fh:
                 fh.write(ann.png())
