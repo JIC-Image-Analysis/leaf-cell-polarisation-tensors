@@ -89,7 +89,6 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
         if not os.path.isdir(d):
             os.mkdir(d)
 
-
     for cell_id in tensors.cell_identifiers:
         cell_tensors = tensors.cell_tensors(cell_id)
         region = cells.region_by_identifier(cell_id)
@@ -97,19 +96,24 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
                                cell_tensors, markers, crop)
 
         fmiddle = "-cell-{:03d}".format(cell_id)
+        png_fname = fprefix + fmiddle + ".png"
+        csv_fname = fprefix + fmiddle + ".csv"
 
         num_tensors = len(cell_tensors)
         if num_tensors > 0:
-            fname = fprefix + fmiddle + ".png"
-            fpath = os.path.join(single_tensor_dir, fname)
+            largest_area_tensor = best_tensor(cell_tensors, markers)
+            fpath = os.path.join(single_tensor_dir, csv_fname)
+            with open(fpath, "w") as fh:
+                fh.write("{}\n".format(largest_area_tensor.csv_line))
+
+            fpath = os.path.join(single_tensor_dir, png_fname)
             with open(fpath, "wb") as fh:
                 fh.write(ann.png())
 
         if num_tensors > 1:
             ann = annotated_region(wall_projection, marker_projection, region,
                                    cell_tensors, markers, crop, draw_all=True)
-            fname = fprefix + fmiddle + ".png"
-            fpath = os.path.join(multi_tensor_dir, fname)
+            fpath = os.path.join(multi_tensor_dir, png_fname)
             with open(fpath, "wb") as fh:
                 fh.write(ann.png())
 
@@ -128,6 +132,7 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
             fpath = os.path.join(no_tensor_dir, fname)
             with open(fpath, "wb") as fh:
                 fh.write(ann.png())
+
 
 def analyse_file(fpath, wall_channel, marker_channel,
                  include_cells_with_no_tensors,
