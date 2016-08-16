@@ -25,7 +25,8 @@ def annotated_region(wall_projection, marker_projection, region, cell_tensors):
 
 
 def generate_cells_for_validation(microscopy_collection, wall_channel,
-                                  marker_channel, fprefix):
+                                  marker_channel, fprefix,
+                                  include_cells_with_no_tensors=True):
     """Generate PNG files for validation."""
     (cells,
      markers,
@@ -58,35 +59,40 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
         with open(fpath, "wb") as fh:
             fh.write(ann.png())
 
-    for cell_id in cells.identifiers:
-        if cell_id in tensors.cell_identifiers:
-            continue
-        cell_tensors = tensors.cell_tensors(cell_id)
-        region = cells.region_by_identifier(cell_id)
-        ann = annotated_region(wall_projection, marker_projection, region,
-                               cell_tensors)
-        num_tensors = len(cell_tensors)
-        assert num_tensors == 0
+    if include_cells_with_no_tensors:
+        for cell_id in cells.identifiers:
+            if cell_id in tensors.cell_identifiers:
+                continue
+            cell_tensors = tensors.cell_tensors(cell_id)
+            region = cells.region_by_identifier(cell_id)
+            ann = annotated_region(wall_projection, marker_projection, region,
+                                   cell_tensors)
+            num_tensors = len(cell_tensors)
+            assert num_tensors == 0
 
-        fname = fprefix + "-cell-{:03d}.png".format(cell_id)
-        fpath = os.path.join(no_tensor_dir, fname)
-        with open(fpath, "wb") as fh:
-            fh.write(ann.png())
+            fname = fprefix + "-cell-{:03d}.png".format(cell_id)
+            fpath = os.path.join(no_tensor_dir, fname)
+            with open(fpath, "wb") as fh:
+                fh.write(ann.png())
 
-def analyse_file(fpath, wall_channel, marker_channel):
+def analyse_file(fpath, wall_channel, marker_channel,
+                 include_cells_with_no_tensors):
     """Analyse a single file."""
     microscopy_collection = get_microscopy_collection(fpath)
     fprefix = os.path.basename(fpath)
     fprefix, _ = os.path.splitext(fprefix)
     generate_cells_for_validation(microscopy_collection, wall_channel,
-                                  marker_channel, fprefix)
+                                  marker_channel, fprefix,
+                                  include_cells_with_no_tensors)
 
 
-def analyse_directory(input_directory, wall_channel, marker_channel):
+def analyse_directory(input_directory, wall_channel, marker_channel,
+                      include_cells_with_no_tensors):
     """Analyse all the files in a directory."""
     for fname in os.listdir(input_directory):
         fpath = os.path.join(input_directory, fname)
-        analyse_file(fpath, wall_channel, marker_channel)
+        analyse_file(fpath, wall_channel, marker_channel,
+                     include_cells_with_no_tensors)
 
 
 def main():
@@ -99,6 +105,7 @@ def main():
     parser.add_argument("-m", "--marker-channel",
                         default=0, type=int,
                         help="Marker channel (zero indexed)")
+    parser.add_argument("-e", "--excelude-cells-with-no-tensors", action="store_true")
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
@@ -112,10 +119,12 @@ def main():
 
     # Run the analysis.
     if os.path.isfile(args.input_source):
-        analyse_file(args.input_source, args.wall_channel, args.marker_channel)
+        analyse_file(args.input_source, args.wall_channel, args.marker_channel,
+                     not args.excelude_cells_with_no_tensors)
     elif os.path.isdir(args.input_source):
         analyse_directory(args.input_source, args.wall_channel,
-                          args.marker_channel)
+                          args.marker_channel,
+                          not args.excelude_cells_with_no_tensors)
     else:
         parser.error("{} not a file or directory".format(args.input_source))
 
