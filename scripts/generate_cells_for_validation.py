@@ -3,8 +3,10 @@
 import os
 import argparse
 from functools import wraps
+import random
 
 import numpy as np
+import scipy.ndimage
 
 from jicbioimage.core.io import AutoName, AutoWrite
 from jicbioimage.core.util.color import pretty_color_from_identifier
@@ -32,7 +34,7 @@ def best_tensor(cell_tensors, markers):
 
 
 def annotated_region(wall_projection, marker_projection, region, cell_tensors,
-                     markers, crop=True, draw_all=False):
+                     markers, crop=True, rotation=None, draw_all=False):
     wall_ann = AnnotatedImage.from_grayscale(wall_projection, (1, 0, 0))
     marker_ann = AnnotatedImage.from_grayscale(marker_projection, (0, 1, 0))
     ann = wall_ann + marker_ann
@@ -59,6 +61,9 @@ def annotated_region(wall_projection, marker_projection, region, cell_tensors,
         ann = ann[np.min(yis):np.max(yis),
                   np.min(xis):np.max(xis)]
 
+    if rotation:
+        ann = scipy.ndimage.rotate(ann, rotation).view(AnnotatedImage)
+
     return ann
 
 
@@ -72,7 +77,8 @@ def marker_area(tensor, markers):
 def generate_cells_for_validation(microscopy_collection, wall_channel,
                                   marker_channel, fprefix,
                                   include_cells_with_no_tensors=True,
-                                  crop=True):
+                                  crop=True,
+                                  rotate=True):
     """Generate PNG files for validation."""
     (cells,
      markers,
@@ -90,10 +96,14 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
             os.mkdir(d)
 
     for cell_id in tensors.cell_identifiers:
+        rotation = None
+        if rotate:
+            rotation = random.randrange(0, 360)
+
         cell_tensors = tensors.cell_tensors(cell_id)
         region = cells.region_by_identifier(cell_id)
         ann = annotated_region(wall_projection, marker_projection, region,
-                               cell_tensors, markers, crop)
+                               cell_tensors, markers, crop, rotation)
 
         fmiddle = "-cell-{:03d}".format(cell_id)
         png_fname = fprefix + fmiddle + ".png"
@@ -104,7 +114,7 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
             largest_area_tensor = best_tensor(cell_tensors, markers)
             fpath = os.path.join(single_tensor_dir, csv_fname)
             with open(fpath, "w") as fh:
-                fh.write("{}\n".format(largest_area_tensor.csv_line))
+                fh.write("{},{}\n".format(largest_area_tensor.csv_line, rotation))
 
             fpath = os.path.join(single_tensor_dir, png_fname)
             with open(fpath, "wb") as fh:
@@ -112,7 +122,7 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
 
         if num_tensors > 1:
             ann = annotated_region(wall_projection, marker_projection, region,
-                                   cell_tensors, markers, crop, draw_all=True)
+                                   cell_tensors, markers, crop, rotation, draw_all=True)
             fpath = os.path.join(multi_tensor_dir, png_fname)
             with open(fpath, "wb") as fh:
                 fh.write(ann.png())
@@ -136,7 +146,7 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
 
 def analyse_file(fpath, wall_channel, marker_channel,
                  include_cells_with_no_tensors,
-                 crop):
+                 crop, rotate):
     """Analyse a single file."""
     microscopy_collection = get_microscopy_collection(fpath)
     fprefix = os.path.basename(fpath)
@@ -144,7 +154,7 @@ def analyse_file(fpath, wall_channel, marker_channel,
     generate_cells_for_validation(microscopy_collection, wall_channel,
                                   marker_channel, fprefix,
                                   include_cells_with_no_tensors,
-                                  crop)
+                                  crop, rotate)
 
 
 def analyse_directory(input_directory, wall_channel, marker_channel,
@@ -168,6 +178,7 @@ def main():
                         help="Marker channel (zero indexed)")
     parser.add_argument("-e", "--exclude-cells-with-no-tensors", action="store_true")
     parser.add_argument("--no-crop", action="store_true")
+    parser.add_argument("--no-rotation", action="store_true")
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
@@ -182,13 +193,15 @@ def main():
     # Run the analysis.
     if os.path.isfile(args.input_source):
         analyse_file(args.input_source, args.wall_channel, args.marker_channel,
-                     include_cells_with_no_tensors=not args.excelude_cells_with_no_tensors,
-                     crop=not args.no_crop)
+                     include_cells_with_no_tensors=not args.exclude_cells_with_no_tensors,
+                     crop=not args.no_crop,
+                     rotate=not args.no_rotation)
     elif os.path.isdir(args.input_source):
         analyse_directory(args.input_source, args.wall_channel,
                           args.marker_channel,
-                          include_cells_with_no_tensors=not args.excelude_cells_with_no_tensors,
-                          crop=not args.no_crop)
+                          include_cells_with_no_tensors=not args.exclude_cells_with_no_tensors,
+                          crop=not args.no_crop,
+                          rotate=not args.no_rotation)
     else:
         parser.error("{} not a file or directory".format(args.input_source))
 
