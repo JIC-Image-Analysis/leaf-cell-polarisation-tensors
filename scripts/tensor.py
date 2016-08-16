@@ -336,7 +336,7 @@ class TensorManager(dict):
 def get_tensors(cells, markers):
     """Return TensorManager instance."""
     tensor_manager = TensorManager()
-    for tensor_id, marker_id in enumerate(markers.identifiers):
+    for marker_id in markers.identifiers:
         m_region = markers.region_by_identifier(marker_id)
         marker_position = m_region.convex_hull.centroid
         cell_id = marker_cell_identifier(m_region, cells)
@@ -345,7 +345,7 @@ def get_tensors(cells, markers):
             continue
         c_region = cells.region_by_identifier(cell_id)
         centroid = c_region.centroid
-        tensor_manager.create_tensor(tensor_id, cell_id, centroid, marker_position)
+        tensor_manager.create_tensor(marker_id, cell_id, centroid, marker_position)
     return tensor_manager
 
 

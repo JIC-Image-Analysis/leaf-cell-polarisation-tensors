@@ -2,26 +2,57 @@
 
 import os
 import argparse
+from functools import wraps
 
 import numpy as np
 
 from jicbioimage.core.io import AutoName, AutoWrite
+from jicbioimage.core.util.color import pretty_color_from_identifier
 from jicbioimage.illustrate import AnnotatedImage
 
 from utils import get_microscopy_collection
 from segment import segment
 from tensor import get_tensors
 
-def annotated_region(wall_projection, marker_projection, region, cell_tensors):
+def annotated_region(wall_projection, marker_projection, region, cell_tensors,
+                     markers, draw_all=False):
     wall_ann = AnnotatedImage.from_grayscale(wall_projection, (1, 0, 0))
     marker_ann = AnnotatedImage.from_grayscale(marker_projection, (0, 1, 0))
     ann = wall_ann + marker_ann
+    ann.mask_region(region.border, (200, 200, 200))
+    ann[np.logical_not(region.dilate(10))] = (0, 0, 0)
 
-    for t in cell_tensors:
-        ann.draw_line(t.centroid, t.marker)
+    largest_area_tensor = None
+    largest_area = None
+    for i, t in enumerate(cell_tensors):
+        marker_region = markers.region_by_identifier(t.tensor_id)
+        area = marker_region.area
+        if largest_area is None:
+            largest_area_tensor = t
+            largest_area = area
+        elif area > largest_area:
+            largest_area_tensor = t
+            largest_area = area
 
-    ann[np.logical_not(region)] = (0, 0, 0)
+#       # Experiment with how to select best tensor.
+#       color = pretty_color_from_identifier(t.tensor_id)
+#       ann.mask_region(marker_region, color)
+
+        if draw_all:
+            ann.draw_line(t.centroid, t.marker, color=(200, 200, 0))
+
+    ann.draw_line(largest_area_tensor.centroid,
+                  largest_area_tensor.marker,
+                  color=(200, 0, 200))
+
     return ann
+
+
+def marker_area(tensor, markers):
+    """Return marker area for a particular tensor."""
+    tensor_id = tensor.tensor_id
+    region = markers.region_by_identifier(tensor_id)
+    return region.area
 
 
 def generate_cells_for_validation(microscopy_collection, wall_channel,
@@ -42,22 +73,28 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
     for d in [no_tensor_dir, single_tensor_dir, multi_tensor_dir]:
         if not os.path.isdir(d):
             os.mkdir(d)
+
+
     for cell_id in tensors.cell_identifiers:
         cell_tensors = tensors.cell_tensors(cell_id)
         region = cells.region_by_identifier(cell_id)
         ann = annotated_region(wall_projection, marker_projection, region,
-                               cell_tensors)
+                               cell_tensors, markers)
 
         num_tensors = len(cell_tensors)
-        if num_tensors == 1:
+        if num_tensors > 0:
             fname = fprefix + "-cell-{:03d}.png".format(cell_id)
             fpath = os.path.join(single_tensor_dir, fname)
-        elif num_tensors > 1:
+            with open(fpath, "wb") as fh:
+                fh.write(ann.png())
+
+        if num_tensors > 1:
+            ann = annotated_region(wall_projection, marker_projection, region,
+                                   cell_tensors, markers, draw_all=True)
             fname = fprefix + "-cell-{:03d}.png".format(cell_id)
             fpath = os.path.join(multi_tensor_dir, fname)
-
-        with open(fpath, "wb") as fh:
-            fh.write(ann.png())
+            with open(fpath, "wb") as fh:
+                fh.write(ann.png())
 
     if include_cells_with_no_tensors:
         for cell_id in cells.identifiers:
