@@ -34,7 +34,7 @@ def best_tensor(cell_tensors, markers):
 
 
 def annotated_region(wall_projection, marker_projection, region, cell_tensors,
-                     markers, crop=True, rotation=None, draw_all=False):
+                     markers, crop=True, rotation=None, enlarge=True, draw_all=False):
     wall_ann = AnnotatedImage.from_grayscale(wall_projection, (1, 0, 0))
     marker_ann = AnnotatedImage.from_grayscale(marker_projection, (0, 1, 0))
     ann = wall_ann + marker_ann
@@ -61,6 +61,9 @@ def annotated_region(wall_projection, marker_projection, region, cell_tensors,
         ann = ann[np.min(yis):np.max(yis),
                   np.min(xis):np.max(xis)]
 
+    if enlarge:
+        ann = scipy.misc.imresize(ann, 3.0, "nearest").view(AnnotatedImage)
+
     if rotation:
         ann = scipy.ndimage.rotate(ann, rotation).view(AnnotatedImage)
 
@@ -78,7 +81,8 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
                                   marker_channel, fprefix,
                                   include_cells_with_no_tensors=True,
                                   crop=True,
-                                  rotate=True):
+                                  rotate=True,
+                                  enlarge=True):
     """Generate PNG files for validation."""
     (cells,
      markers,
@@ -103,7 +107,7 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
         cell_tensors = tensors.cell_tensors(cell_id)
         region = cells.region_by_identifier(cell_id)
         ann = annotated_region(wall_projection, marker_projection, region,
-                               cell_tensors, markers, crop, rotation)
+                               cell_tensors, markers, crop, rotation, enlarge)
 
         fmiddle = "-cell-{:03d}".format(cell_id)
         png_fname = fprefix + fmiddle + ".png"
@@ -122,7 +126,8 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
 
         if num_tensors > 1:
             ann = annotated_region(wall_projection, marker_projection, region,
-                                   cell_tensors, markers, crop, rotation, draw_all=True)
+                                   cell_tensors, markers, crop, rotation,
+                                   enlarge, draw_all=True)
             fpath = os.path.join(multi_tensor_dir, png_fname)
             with open(fpath, "wb") as fh:
                 fh.write(ann.png())
@@ -146,7 +151,7 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
 
 def analyse_file(fpath, wall_channel, marker_channel,
                  include_cells_with_no_tensors,
-                 crop, rotate):
+                 crop, rotate, enlarge):
     """Analyse a single file."""
     microscopy_collection = get_microscopy_collection(fpath)
     fprefix = os.path.basename(fpath)
@@ -154,16 +159,18 @@ def analyse_file(fpath, wall_channel, marker_channel,
     generate_cells_for_validation(microscopy_collection, wall_channel,
                                   marker_channel, fprefix,
                                   include_cells_with_no_tensors,
-                                  crop, rotate)
+                                  crop, rotate, enlarge)
 
 
 def analyse_directory(input_directory, wall_channel, marker_channel,
-                      include_cells_with_no_tensors):
+                      include_cells_with_no_tensors,
+                      crop, rotate, enlarge):
     """Analyse all the files in a directory."""
     for fname in os.listdir(input_directory):
         fpath = os.path.join(input_directory, fname)
         analyse_file(fpath, wall_channel, marker_channel,
-                     include_cells_with_no_tensors)
+                     include_cells_with_no_tensors,
+                     crop, rotate, enlarge)
 
 
 def main():
@@ -179,6 +186,7 @@ def main():
     parser.add_argument("-e", "--exclude-cells-with-no-tensors", action="store_true")
     parser.add_argument("--no-crop", action="store_true")
     parser.add_argument("--no-rotation", action="store_true")
+    parser.add_argument("--no-enlarge", action="store_true")
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
@@ -195,13 +203,15 @@ def main():
         analyse_file(args.input_source, args.wall_channel, args.marker_channel,
                      include_cells_with_no_tensors=not args.exclude_cells_with_no_tensors,
                      crop=not args.no_crop,
-                     rotate=not args.no_rotation)
+                     rotate=not args.no_rotation,
+                     enlarge=not args.no_enlarge)
     elif os.path.isdir(args.input_source):
         analyse_directory(args.input_source, args.wall_channel,
                           args.marker_channel,
                           include_cells_with_no_tensors=not args.exclude_cells_with_no_tensors,
                           crop=not args.no_crop,
-                          rotate=not args.no_rotation)
+                          rotate=not args.no_rotation,
+                          enlarge=not args.no_enlarge)
     else:
         parser.error("{} not a file or directory".format(args.input_source))
 
