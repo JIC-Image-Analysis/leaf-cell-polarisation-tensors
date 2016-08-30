@@ -90,7 +90,7 @@ def segment(microscopy_collection, wall_channel, marker_channel):
     wall_projection = projection_from_stack_and_surface(wall_stack,
                                                         surface)
     marker_projection = projection_from_stack_and_surface(marker_stack,
-                                                          surface, 1, 1)
+                                                          surface)
 
     cells, wall_mask = segment_cells(wall_projection, max_cell_size=10000)
     markers = segment_markers(marker_projection, wall_mask, min_size=5,
