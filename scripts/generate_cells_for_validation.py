@@ -33,29 +33,8 @@ def best_tensor(cell_tensors, markers):
     return largest_area_tensor
 
 
-def annotated_region(wall_projection, marker_projection, region, cell_tensors,
-                     markers, crop=True, rotation=None, enlarge=True,
-                     padding=True, draw_all=False):
-    wall_ann = AnnotatedImage.from_grayscale(wall_projection, (1, 0, 0))
-    marker_ann = AnnotatedImage.from_grayscale(marker_projection, (0, 1, 0))
-    ann = wall_ann + marker_ann
-    ann.mask_region(region.border, (200, 200, 200))
-    dilated_region = region.dilate(10)
-    ann[np.logical_not(dilated_region)] = (0, 0, 0)
-
-    for t in cell_tensors:
-#       # Experiment with how to select best tensor.
-#       color = pretty_color_from_identifier(t.tensor_id)
-#       ann.mask_region(marker_region, color)
-
-        if draw_all:
-            ann.draw_line(t.centroid, t.marker, color=(200, 200, 0))
-
-    largest_area_tensor = best_tensor(cell_tensors, markers)
-    if largest_area_tensor:
-        ann.draw_line(largest_area_tensor.centroid,
-                      largest_area_tensor.marker,
-                      color=(200, 0, 200))
+def post_process_annotation(ann, cell_tensors, dilated_region, crop=True,
+                            rotation=None, enlarge=True, padding=True):
 
     if crop:
         yis, xis = dilated_region.index_arrays
@@ -78,6 +57,38 @@ def annotated_region(wall_projection, marker_projection, region, cell_tensors,
         ann = scipy.ndimage.rotate(ann, rotation).view(AnnotatedImage)
 
     return ann
+
+
+def write_annotations(fpath_prefix, wall_projection, marker_projection, region,
+                      cell_tensors, markers, crop=True, rotation=None,
+                      enlarge=True, padding=True, draw_all=False):
+    wall_ann = AnnotatedImage.from_grayscale(wall_projection, (1, 0, 0))
+    marker_ann = AnnotatedImage.from_grayscale(marker_projection, (0, 1, 0))
+    ann = wall_ann + marker_ann
+    ann.mask_region(region.border, (200, 200, 200))
+    dilated_region = region.dilate(10)
+    ann[np.logical_not(dilated_region)] = (0, 0, 0)
+
+    for t in cell_tensors:
+        if draw_all:
+            ann.draw_line(t.centroid, t.marker, color=(200, 200, 0))
+
+    largest_area_tensor = best_tensor(cell_tensors, markers)
+    if largest_area_tensor:
+        ann.draw_line(largest_area_tensor.centroid,
+                      largest_area_tensor.marker,
+                      color=(200, 0, 200))
+
+    for suffix, annotation in [("-wall", wall_ann),
+                               ("-marker", marker_ann),
+                               ("-combined", ann)]:
+        fpath = fpath_prefix + suffix + ".png"
+        annotation = post_process_annotation(annotation, cell_tensors,
+                                             dilated_region, crop, rotation,
+                                             enlarge, padding)
+
+        with open(fpath, "wb") as fh:
+            fh.write(annotation.png())
 
 
 def marker_area(tensor, markers):
@@ -117,12 +128,9 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
 
         cell_tensors = tensors.cell_tensors(cell_id)
         region = cells.region_by_identifier(cell_id)
-        ann = annotated_region(wall_projection, marker_projection, region,
-                               cell_tensors, markers, crop, rotation, enlarge,
-                               padding)
 
         fmiddle = "-cell-{:03d}".format(cell_id)
-        png_fname = fprefix + fmiddle + ".png"
+        png_fname = fprefix + fmiddle
         csv_fname = fprefix + fmiddle + ".csv"
 
         num_tensors = len(cell_tensors)
@@ -133,33 +141,28 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
                 fh.write("{},{}\n".format(largest_area_tensor.csv_line, rotation))
 
             fpath = os.path.join(single_tensor_dir, png_fname)
-            with open(fpath, "wb") as fh:
-                fh.write(ann.png())
+            write_annotations(fpath, wall_projection, marker_projection, region,
+                              cell_tensors, markers, crop, rotation, enlarge,
+                              padding)
 
         if num_tensors > 1:
-            ann = annotated_region(wall_projection, marker_projection, region,
-                                   cell_tensors, markers, crop, rotation,
-                                   enlarge, padding, draw_all=True)
             fpath = os.path.join(multi_tensor_dir, png_fname)
-            with open(fpath, "wb") as fh:
-                fh.write(ann.png())
+            write_annotations(fpath, wall_projection, marker_projection, region,
+                              cell_tensors, markers, crop, rotation,
+                              enlarge, padding, draw_all=True)
 
     if include_cells_with_no_tensors:
         for cell_id in cells.identifiers:
             if cell_id in tensors.cell_identifiers:
                 continue
-            cell_tensors = tensors.cell_tensors(cell_id)
             region = cells.region_by_identifier(cell_id)
-            ann = annotated_region(wall_projection, marker_projection, region,
-                                   cell_tensors, crop, rotation, enlarge,
-                                   padding)
-            num_tensors = len(cell_tensors)
-            assert num_tensors == 0
-
-            fname = fprefix + "-cell-{:03d}.png".format(cell_id)
+            cell_tensors = tensors.cell_tensors(cell_id)
+            assert len(cell_tensors) == 0
+            fname = fprefix + "-cell-{:03d}".format(cell_id)
             fpath = os.path.join(no_tensor_dir, fname)
-            with open(fpath, "wb") as fh:
-                fh.write(ann.png())
+            write_annotations(fpath, wall_projection, marker_projection, region,
+                              cell_tensors, crop, rotation, enlarge,
+                              padding)
 
 
 def analyse_file(fpath, wall_channel, marker_channel,
