@@ -66,7 +66,7 @@ def write_annotations(fpath_prefix, wall_projection, marker_projection, region,
     marker_ann = AnnotatedImage.from_grayscale(marker_projection, (0, 1, 0))
     ann = wall_ann + marker_ann
     ann.mask_region(region.border, (200, 200, 200))
-    dilated_region = region.dilate(10)
+    dilated_region = region.dilate(20)
     ann[np.logical_not(dilated_region)] = (0, 0, 0)
 
     for t in cell_tensors:
