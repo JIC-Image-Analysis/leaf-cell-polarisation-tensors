@@ -180,9 +180,13 @@ def analyse_file(fpath, wall_channel, marker_channel,
 
 def analyse_directory(input_directory, wall_channel, marker_channel,
                       include_cells_with_no_tensors,
-                      crop, rotate, enlarge, padding):
+                      crop, rotate, enlarge, padding, output_directory):
     """Analyse all the files in a directory."""
     for fname in os.listdir(input_directory):
+        name, ext = os.path.splitext(fname)
+        AutoName.directory = os.path.join(output_directory, name)
+        if not os.path.isdir(AutoName.directory):
+            os.mkdir(AutoName.directory)
         fpath = os.path.join(input_directory, fname)
         analyse_file(fpath, wall_channel, marker_channel,
                      include_cells_with_no_tensors,
@@ -230,7 +234,8 @@ def main():
                           crop=not args.no_crop,
                           rotate=not args.no_rotation,
                           enlarge=not args.no_enlarge,
-                          padding=not args.no_padding)
+                          padding=not args.no_padding,
+                          output_directory=args.output_dir)
     else:
         parser.error("{} not a file or directory".format(args.input_source))
 
