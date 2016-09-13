@@ -17,6 +17,7 @@ def process_tag_line(line):
     name, ext = os.path.splitext(image_fpath)
     name, _ = name.rsplit("-", 1) # remove "-wall" suffix
     csv_fpath = name + ".csv"
+    csv_fpath = "/".join(csv_fpath.split("/")[-5:])  # Make path relative to maek it work in docker container
     return verdict, csv_fpath
 
 def process_csv_file(csv_fpath):
