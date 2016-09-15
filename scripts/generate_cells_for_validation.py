@@ -58,7 +58,7 @@ def post_process_annotation(ann, cell_tensors, dilated_region, crop=True,
         ann = scipy.misc.imresize(ann, 3.0, "nearest").view(AnnotatedImage)
 
     if rotation:
-        ann = scipy.ndimage.rotate(ann, rotation).view(AnnotatedImage)
+        ann = scipy.ndimage.rotate(ann, rotation, order=0).view(AnnotatedImage)
 
     return ann
 
@@ -101,7 +101,6 @@ def marker_area(tensor, markers):
     tensor_id = tensor.tensor_id
     region = markers.region_by_identifier(tensor_id)
     return region.area
-
 
 def generate_cells_for_validation(microscopy_collection, wall_channel,
                                   marker_channel, fprefix,
