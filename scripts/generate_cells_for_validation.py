@@ -67,6 +67,8 @@ def write_annotations(fpath_prefix, wall_projection, marker_projection, region,
     ann = wall_ann + marker_ann
     ann.mask_region(region.border, (200, 200, 200))
     dilated_region = region.dilate(20)
+    wall_ann[np.logical_not(dilated_region)] = (0, 0, 0)
+    marker_ann[np.logical_not(dilated_region)] = (0, 0, 0)
     ann[np.logical_not(dilated_region)] = (0, 0, 0)
 
     for t in cell_tensors:
