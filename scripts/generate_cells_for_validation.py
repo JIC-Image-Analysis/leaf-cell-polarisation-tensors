@@ -1,5 +1,8 @@
 """Generate cells for validation."""
 
+import time
+start_time = time.time()
+
 import os
 import argparse
 from functools import wraps
@@ -7,6 +10,7 @@ import random
 
 import numpy as np
 import scipy.ndimage
+import scipy.misc
 
 from jicbioimage.core.io import AutoName, AutoWrite
 from jicbioimage.core.util.color import pretty_color_from_identifier
@@ -89,8 +93,7 @@ def write_annotations(fpath_prefix, wall_projection, marker_projection, region,
                                              dilated_region, crop, rotation,
                                              enlarge, padding)
 
-        with open(fpath, "wb") as fh:
-            fh.write(annotation.png())
+        scipy.misc.imsave(fpath, annotation)
 
 
 def marker_area(tensor, markers):
@@ -158,8 +161,7 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
             if cell_id in tensors.cell_identifiers:
                 continue
             region = cells.region_by_identifier(cell_id)
-            cell_tensors = tensors.cell_tensors(cell_id)
-            assert len(cell_tensors) == 0
+            cell_tensors = []
             fname = fprefix + "-cell-{:03d}".format(cell_id)
             fpath = os.path.join(no_tensor_dir, fname)
             write_annotations(fpath, wall_projection, marker_projection, region,
@@ -244,3 +246,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print("Script took: {} seconds".format(time.time() - start_time))
