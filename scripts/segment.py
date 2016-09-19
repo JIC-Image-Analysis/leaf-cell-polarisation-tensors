@@ -1,6 +1,7 @@
 import os
 import argparse
 
+import numpy as np
 import skimage.filters
 
 from jicbioimage.core.io import AutoName, AutoWrite
@@ -88,9 +89,11 @@ def segment(microscopy_collection, wall_channel, marker_channel):
 
     surface = generate_surface_from_stack(wall_stack)
     wall_projection = projection_from_stack_and_surface(wall_stack,
-                                                        surface)
+                                                        surface,
+                                                        proj_method=np.mean)
     marker_projection = projection_from_stack_and_surface(marker_stack,
-                                                          surface)
+                                                          surface,
+                                                          proj_method=np.max)
 
     cells, wall_mask = segment_cells(wall_projection, max_cell_size=10000)
     markers = segment_markers(marker_projection, wall_mask, min_size=5,
