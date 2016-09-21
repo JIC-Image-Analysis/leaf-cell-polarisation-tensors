@@ -103,7 +103,8 @@ def marker_area(tensor, markers):
     return region.area
 
 def generate_cells_for_validation(microscopy_collection, wall_channel,
-                                  marker_channel, fprefix,
+                                  marker_channel, marker_threshold,
+                                  z_below, fprefix,
                                   include_cells_with_no_tensors=True,
                                   crop=True,
                                   rotate=True,
@@ -114,7 +115,7 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
      markers,
      wall_projection,
      marker_projection) = segment(microscopy_collection, wall_channel,
-                                  marker_channel)
+                                  marker_channel, marker_threshold, z_below)
 
     tensors = get_tensors(cells, markers)
 
@@ -169,19 +170,26 @@ def generate_cells_for_validation(microscopy_collection, wall_channel,
 
 
 def analyse_file(fpath, wall_channel, marker_channel,
+                 marker_threshold, z_below,
                  include_cells_with_no_tensors,
                  crop, rotate, enlarge, padding):
     """Analyse a single file."""
+    with open(os.path.join(AutoName.directory, "settings.yml"), "w") as fh:
+        fh.write("---\n")
+        fh.write("marker_threshold: {}\n".format(marker_threshold))
+        fh.write("z_below: {}\n".format(z_below))
     microscopy_collection = get_microscopy_collection(fpath)
     fprefix = os.path.basename(fpath)
     fprefix, _ = os.path.splitext(fprefix)
     generate_cells_for_validation(microscopy_collection, wall_channel,
-                                  marker_channel, fprefix,
+                                  marker_channel, marker_threshold,
+                                  z_below, fprefix,
                                   include_cells_with_no_tensors,
                                   crop, rotate, enlarge, padding)
 
 
 def analyse_directory(input_directory, wall_channel, marker_channel,
+                      marker_threshold, z_below,
                       include_cells_with_no_tensors,
                       crop, rotate, enlarge, padding, output_directory):
     """Analyse all the files in a directory."""
@@ -192,6 +200,7 @@ def analyse_directory(input_directory, wall_channel, marker_channel,
             os.mkdir(AutoName.directory)
         fpath = os.path.join(input_directory, fname)
         analyse_file(fpath, wall_channel, marker_channel,
+                     marker_threshold,
                      include_cells_with_no_tensors,
                      crop, rotate, enlarge, padding)
 
@@ -206,6 +215,12 @@ def main():
     parser.add_argument("-m", "--marker-channel",
                         default=0, type=int,
                         help="Marker channel (zero indexed)")
+    parser.add_argument("--marker-threshold",
+                        default=70, type=int,
+                        help="Marker threshold")
+    parser.add_argument("--z-below",
+                        default=5, type=int,
+                        help="Slices below gauss proj surface")
     parser.add_argument("-e", "--exclude-cells-with-no-tensors", action="store_true")
     parser.add_argument("--no-crop", action="store_true")
     parser.add_argument("--no-rotation", action="store_true")
@@ -225,6 +240,8 @@ def main():
     # Run the analysis.
     if os.path.isfile(args.input_source):
         analyse_file(args.input_source, args.wall_channel, args.marker_channel,
+                     marker_threshold=args.marker_threshold,
+                     z_below=args.z_below,
                      include_cells_with_no_tensors=not args.exclude_cells_with_no_tensors,
                      crop=not args.no_crop,
                      rotate=not args.no_rotation,
@@ -233,6 +250,8 @@ def main():
     elif os.path.isdir(args.input_source):
         analyse_directory(args.input_source, args.wall_channel,
                           args.marker_channel,
+                          marker_threshold=args.marker_threshold,
+                          z_below=args.z_below,
                           include_cells_with_no_tensors=not args.exclude_cells_with_no_tensors,
                           crop=not args.no_crop,
                           rotate=not args.no_rotation,

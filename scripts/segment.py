@@ -82,7 +82,8 @@ def segment_markers(image, wall_mask, min_size, threshold):
     return segmentation
 
 
-def segment(microscopy_collection, wall_channel, marker_channel):
+def segment(microscopy_collection, wall_channel, marker_channel,
+            marker_threshold, z_below):
     """Return cell and marker segmentations."""
     wall_stack = microscopy_collection.zstack_array(c=wall_channel)
     marker_stack = microscopy_collection.zstack_array(c=marker_channel)
@@ -90,14 +91,16 @@ def segment(microscopy_collection, wall_channel, marker_channel):
     surface = generate_surface_from_stack(wall_stack)
     wall_projection = projection_from_stack_and_surface(wall_stack,
                                                         surface,
+                                                        z_below=z_below,
                                                         proj_method=np.mean)
     marker_projection = projection_from_stack_and_surface(marker_stack,
                                                           surface,
+                                                          z_below=z_below,
                                                           proj_method=np.max)
 
     cells, wall_mask = segment_cells(wall_projection, max_cell_size=10000)
     markers = segment_markers(marker_projection, wall_mask, min_size=5,
-                              threshold=70)
+                              threshold=marker_threshold)
 
     return cells, markers, wall_projection, marker_projection
 
