@@ -4,3 +4,4 @@ jicbioimage.segment==0.4.0
 jicbioimage.transform==0.5.1
 scikit-image==0.11.3
 Flask==0.10.1
+pyyaml

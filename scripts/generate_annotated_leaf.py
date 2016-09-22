@@ -3,6 +3,10 @@
 import argparse
 import os.path
 
+import yaml
+
+import numpy as np
+
 from jicbioimage.core.io import AutoWrite, AutoName
 from jicbioimage.illustrate import AnnotatedImage
 
@@ -40,16 +44,21 @@ def process_tags_file(tags_file):
             yield centroid, marker
 
 
-def generate_annotated_leaf(microscopy_fpath, wall_channel, marker_channel, tags_fpath):
+def generate_annotated_leaf(microscopy_fpath, wall_channel, marker_channel,
+                            tags_fpath, z_below):
     microscopy_collection = get_microscopy_collection(microscopy_fpath)
     wall_stack = microscopy_collection.zstack_array(c=wall_channel)
     marker_stack = microscopy_collection.zstack_array(c=marker_channel)
 
     surface = generate_surface_from_stack(wall_stack)
     wall_projection = projection_from_stack_and_surface(wall_stack,
-                                                        surface)
+                                                        surface,
+                                                        z_below=z_below,
+                                                        proj_method=np.mean)
     marker_projection = projection_from_stack_and_surface(marker_stack,
-                                                          surface)
+                                                          surface,
+                                                          z_below=z_below,
+                                                          proj_method=np.max)
 
     wall_ann = AnnotatedImage.from_grayscale(wall_projection, (1, 0, 0))
     marker_ann = AnnotatedImage.from_grayscale(marker_projection, (0, 1, 0))
@@ -68,6 +77,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input_file", help="Input microscope file.")
     parser.add_argument("tags_file", help="ImageTagger tags file.")
+    parser.add_argument("settings_file", help="Settings file.")
     parser.add_argument("output_directory", help="Output directory.")
     parser.add_argument("-w", "--wall-channel",
                         default=1, type=int,
@@ -77,10 +87,18 @@ if __name__ == "__main__":
                         help="Marker channel (zero indexed)")
 
     args = parser.parse_args()
+
+    if not os.path.isfile(args.settings_file):
+        parser.error("No such file: {}".format(args.settings_file))
+
+    settings = yaml.load(file(args.settings_file))
+
     AutoWrite.on = False
     if not os.path.isdir(args.output_directory):
         os.mkdir(args.output_directory)
     AutoName.directory = args.output_directory
 
     process_tags_file(args.tags_file)
-    generate_annotated_leaf(args.input_file, args.wall_channel, args.marker_channel, args.tags_file)
+    generate_annotated_leaf(args.input_file, args.wall_channel,
+                            args.marker_channel, args.tags_file,
+                            z_below=settings["z_below"])
