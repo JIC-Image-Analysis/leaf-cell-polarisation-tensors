@@ -91,12 +91,18 @@ def generate_projections_from_microscope_image(input_file,
     surface = generate_surface_from_stack(wall_stack)
 
     cell_wall_projection = projection_from_stack_and_surface(wall_stack,
-                                                             surface)
-    marker_projection = projection_from_stack_and_surface(marker_stack,
-                                                          surface)
+                                                             surface,
+                                                             proj_method=np.mean)
+    marker_max_projection = projection_from_stack_and_surface(marker_stack,
+                                                          surface,
+                                                          proj_method=np.max)
+    marker_mean_projection = projection_from_stack_and_surface(marker_stack,
+                                                          surface,
+                                                          proj_method=np.mean)
 
     save_image("wall.png", cell_wall_projection)
-    save_image("marker.png", marker_projection)
+    save_image("marker_max.png", marker_max_projection)
+    save_image("marker_mean.png", marker_mean_projection)
     pil_im = PIL.Image.fromarray(surface.astype(np.uint8))
     pil_im.save('surface.png')
 
